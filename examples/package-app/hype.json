@@ -1,0 +1,26 @@
+{
+  "name": "package-app",
+  "version": "1.0.0",
+  "description": "A complete application example demonstrating the hype-rs module system with package structure",
+  "main": "app.lua",
+  "author": "Hype-RS Examples",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "start": "hype app.lua",
+    "test": "hype tests/test_all.lua"
+  },
+  "keywords": [
+    "hype-rs",
+    "lua",
+    "example",
+    "modules",
+    "application"
+  ],
+  "engines": {
+    "hype": ">=1.0.0"
+  }
+}
