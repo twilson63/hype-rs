@@ -16,7 +16,7 @@ fn create_test_module(dir: &Path, name: &str, content: &str) -> std::io::Result<
 }
 
 fn create_modules_directory(base: &Path, count: usize) -> std::io::Result<()> {
-    let modules_dir = base.join("node_modules");
+    let modules_dir = base.join("hype_modules");
     fs::create_dir_all(&modules_dir)?;
 
     for i in 0..count {
@@ -105,7 +105,7 @@ mod module_loading_stress {
             let batch_dir = base.join(format!("batch_{}", batch_size));
             fs::create_dir_all(&batch_dir).unwrap();
 
-            let modules_dir = batch_dir.join("node_modules");
+            let modules_dir = batch_dir.join("hype_modules");
             fs::create_dir_all(&modules_dir).unwrap();
 
             for i in 0..*batch_size {
@@ -184,7 +184,7 @@ mod module_loading_stress {
     fn test_long_dependency_chains() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         for i in 0..6 {
@@ -259,7 +259,7 @@ mod performance_degradation {
         }
         fs::create_dir_all(&deep_path).unwrap();
 
-        let modules_dir = deep_path.join("node_modules");
+        let modules_dir = deep_path.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("deep_module");
@@ -283,7 +283,7 @@ mod performance_degradation {
     fn test_large_module_files() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("large_module");

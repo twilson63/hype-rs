@@ -88,7 +88,7 @@ dataProcessor.process(result)
 │         Module Resolution Algorithm                 │
 │                                                     │
 │  1. Check require.cache                            │
-│  2. Search node_modules/ directories               │
+│  2. Search hype_modules/ directories               │
 │  3. Check ~/.hype/modules/                         │
 │  4. Check built-in modules                         │
 └──────────────────┬──────────────────────────────────┘
@@ -117,7 +117,7 @@ The main function to load modules. Returns the module's exports.
 
 ```lua
 local fs = require("fs")              -- Load built-in module
-local math = require("math-lib")      -- Load from node_modules
+local math = require("math-lib")      -- Load from hype_modules
 local util = require("./util")        -- Load relative module
 ```
 
@@ -203,7 +203,7 @@ Metadata file for modules and projects. Declares module information and dependen
 
 ✅ **Node.js-Compatible Resolution**
 - Familiar to JavaScript developers
-- Standard node_modules directory structure
+- Standard hype_modules directory structure
 - Compatible with ecosystem patterns
 
 ✅ **Cross-Platform Support**
@@ -315,7 +315,7 @@ Custom modules can be organized in directories with `hype.json` files:
 my-project/
 ├── hype.json
 ├── app.lua
-└── node_modules/
+└── hype_modules/
     └── math-lib/
         ├── hype.json
         ├── index.lua

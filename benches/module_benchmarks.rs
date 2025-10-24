@@ -180,10 +180,10 @@ fn bench_custom_module_load() -> BenchmarkResult {
         || {
             let temp_dir = TempDir::new()?;
             let temp_path = temp_dir.path();
-            let node_modules = temp_path.join("node_modules");
-            fs::create_dir_all(&node_modules)?;
+            let hype_modules = temp_path.join("hype_modules");
+            fs::create_dir_all(&hype_modules)?;
 
-            let custom_module_dir = node_modules.join("custom-module");
+            let custom_module_dir = hype_modules.join("custom-module");
             fs::create_dir_all(&custom_module_dir)?;
 
             let test_file = custom_module_dir.join("index.lua");

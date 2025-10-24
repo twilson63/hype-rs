@@ -60,9 +60,9 @@ require("module-name")
     ├─→ Circular? → Error
     │
     ├─→ Resolve path:
-    │   1. ./node_modules/module-name/hype.json
-    │   2. ../node_modules/module-name/hype.json
-    │   3. ../../node_modules/module-name/hype.json
+    │   1. ./hype_modules/module-name/hype.json
+    │   2. ../hype_modules/module-name/hype.json
+    │   3. ../../hype_modules/module-name/hype.json
     │   4. ~/.hype/modules/module-name/hype.json
     │   5. Built-in modules
     │

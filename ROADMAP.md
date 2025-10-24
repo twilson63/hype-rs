@@ -13,7 +13,7 @@
 ### 1.1 Package Manager & Module System ⭐⭐⭐⭐⭐
 **Why**: Node.js thrives on npm. Without this, adoption is zero.
 - `require()` system with proper module resolution
-- Local package management (`node_modules/` equivalent)
+- Local package management (`hype_modules/` equivalent)
 - Module caching system
 - `hype.json` manifest
 - Dependency resolution and lock files

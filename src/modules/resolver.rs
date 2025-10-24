@@ -6,12 +6,12 @@ use crate::error::HypeError;
 
 const BUILTIN_MODULES: &[&str] = &["fs", "path", "events", "util", "table"];
 
-/// Module resolver implementing Node.js-compatible resolution algorithm.
+/// Module resolver implementing Hype-RS module resolution algorithm.
 ///
 /// Resolves module identifiers to their full filesystem paths using the
 /// following priority order:
 /// 1. Built-in modules (fs, path, events, util, table)
-/// 2. node_modules directories (walk up from current directory)
+/// 2. hype_modules directories (walk up from current directory)
 /// 3. Home directory modules (~/.hype/modules)
 /// 4. Returns error if not found
 ///
@@ -47,9 +47,9 @@ impl ModuleResolver {
 
     /// Resolve a module identifier to its full filesystem path.
     ///
-    /// Uses the standard Node.js module resolution algorithm:
+    /// Uses the Hype-RS module resolution algorithm:
     /// 1. Check if module is a built-in
-    /// 2. Walk up directory tree looking for node_modules/module_id
+    /// 2. Walk up directory tree looking for hype_modules/module_id
     /// 3. Check ~/.hype/modules/module_id
     /// 4. Return ModuleNotFound error
     ///
@@ -71,7 +71,7 @@ impl ModuleResolver {
         }
 
         for search_path in &self.search_paths {
-            let candidate = search_path.join("node_modules").join(module_id);
+            let candidate = search_path.join("hype_modules").join(module_id);
             if candidate.exists() {
                 return Ok(candidate);
             }
@@ -110,7 +110,7 @@ impl ModuleResolver {
         let mut current = from.to_path_buf();
 
         loop {
-            let candidate = current.join("node_modules").join(module_id);
+            let candidate = current.join("hype_modules").join(module_id);
             if candidate.exists() {
                 return Ok(candidate);
             }
@@ -174,7 +174,7 @@ impl ModuleResolver {
 
     /// Add a search path for module resolution.
     ///
-    /// Search paths are checked before the standard node_modules walk.
+    /// Search paths are checked before the standard hype_modules walk.
     /// This allows for custom module directories.
     ///
     /// # Arguments
@@ -292,12 +292,12 @@ mod tests {
     }
 
     #[test]
-    fn test_resolve_node_modules() {
+    fn test_resolve_hype_modules() {
         let temp_dir = TempDir::new().unwrap();
         let temp_path = temp_dir.path();
 
-        let node_modules = temp_path.join("node_modules");
-        let test_module = node_modules.join("test-module");
+        let hype_modules = temp_path.join("hype_modules");
+        let test_module = hype_modules.join("test-module");
         fs::create_dir_all(&test_module).unwrap();
 
         let resolver = ModuleResolver::new(temp_path.to_path_buf());
@@ -312,8 +312,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let temp_path = temp_dir.path();
 
-        let node_modules = temp_path.join("node_modules");
-        let test_module = node_modules.join("shared-lib");
+        let hype_modules = temp_path.join("hype_modules");
+        let test_module = hype_modules.join("shared-lib");
         fs::create_dir_all(&test_module).unwrap();
 
         let nested_dir = temp_path.join("src").join("nested");
@@ -375,8 +375,8 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let temp_path = temp_dir.path();
 
-        let node_modules = temp_path.join("node_modules");
-        let test_module = node_modules.join("test-module");
+        let hype_modules = temp_path.join("hype_modules");
+        let test_module = hype_modules.join("test-module");
         fs::create_dir_all(&test_module).unwrap();
 
         let resolver = ModuleResolver::new(PathBuf::from("."));

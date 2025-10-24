@@ -72,9 +72,9 @@ And: Cache the result
 ```
 Path resolution priority:
 1. Check module cache
-2. Check ./node_modules/module_name/hype.json
-3. Check ../node_modules/module_name/hype.json
-4. Check ../../node_modules/... (recursive up to project root)
+2. Check ./hype_modules/module_name/hype.json
+3. Check ../hype_modules/module_name/hype.json
+4. Check ../../hype_modules/... (recursive up to project root)
 5. Check ~/.hype/modules/module_name/hype.json
 6. Check built-in modules
 7. Throw error if not found
@@ -196,8 +196,8 @@ Cache result
 ```
 1. Check require.cache[module_id]
 2. For each directory in search_paths:
-     a. Check dir/node_modules/module_id/hype.json
-     b. If found, return dir/node_modules/module_id
+     a. Check dir/hype_modules/module_id/hype.json
+     b. If found, return dir/hype_modules/module_id
 3. Check ~/.hype/modules/module_id/hype.json
 4. Check built-in modules
 5. Throw MODULE_NOT_FOUND
@@ -238,7 +238,7 @@ Cache result
 ```
 Extend Lua's built-in require() function
     ↓
-Set LUA_PATH to include ./node_modules
+Set LUA_PATH to include ./hype_modules
     ↓
 Load .lua files directly
     ↓
@@ -251,8 +251,8 @@ Return module.exports (or last return value)
 ```
 Use Lua's native package.path:
 - ./?.lua
-- ./node_modules/?.lua
-- ./node_modules/?/init.lua
+- ./hype_modules/?.lua
+- ./hype_modules/?/init.lua
 - ~/.hype/modules/?.lua
 - built-in modules
 ```
@@ -305,7 +305,7 @@ Return module.exports or Lua table
 ```
 1. Check Rust cache
 2. For each directory up from cwd:
-     a. Check node_modules/module_id/hype.json
+     a. Check hype_modules/module_id/hype.json
      b. If main specified, use it
      c. If not, try index.lua
 3. Check built-in modules
@@ -445,7 +445,7 @@ fn resolve(module_id: &str) -> Result<PathBuf> {
     
     // 2. Check each search path
     for search_path in &self.search_paths {
-        let module_path = search_path.join("node_modules").join(module_id);
+        let module_path = search_path.join("hype_modules").join(module_id);
         if self.module_exists(&module_path) {
             return Ok(module_path);
         }
@@ -465,7 +465,7 @@ fn resolve(module_id: &str) -> Result<PathBuf> {
 **Deliverables**:
 - [ ] ModuleResolver implementation
 - [ ] Builtin module checking
-- [ ] node_modules directory traversal
+- [ ] hype_modules directory traversal
 - [ ] Cross-platform path handling
 - [ ] Integration tests for resolution
 
@@ -922,7 +922,7 @@ Daily standup template:
 my-app/
 ├── hype.json
 ├── app.lua
-└── node_modules/
+└── hype_modules/
     └── math-lib/
         ├── hype.json
         ├── index.lua
@@ -979,8 +979,8 @@ $ hype app.lua
 local missing = require("non-existent")
 -- Error: MODULE_NOT_FOUND
 -- Details: Module 'non-existent' not found in:
---   ./node_modules/non-existent
---   ../node_modules/non-existent
+--   ./hype_modules/non-existent
+--   ../hype_modules/non-existent
 --   ~/.hype/modules/non-existent
 --   Built-in modules
 ```

@@ -62,10 +62,10 @@ When you call `require("module-name")`, the system searches in this order:
 
 1. **Require Cache**: Check if already loaded
 2. **Built-in Modules**: fs, path, events, util, table
-3. **node_modules**: Search directories walking up from current directory
-   - `./node_modules/module-name/`
-   - `../node_modules/module-name/`
-   - `../../node_modules/module-name/` (and so on)
+3. **hype_modules**: Search directories walking up from current directory
+   - `./hype_modules/module-name/`
+   - `../hype_modules/module-name/`
+   - `../../hype_modules/module-name/` (and so on)
 4. **Home Modules**: `~/.hype/modules/module-name/`
 
 ### Behavior
@@ -274,11 +274,11 @@ print(fs_path)
 -- Output: /usr/local/share/hype/modules/fs.lua
 ```
 
-**Resolve module from node_modules:**
+**Resolve module from hype_modules:**
 ```lua
 local util_path = require.resolve("math-lib")
 print(util_path)
--- Output: /home/user/project/node_modules/math-lib/index.lua
+-- Output: /home/user/project/hype_modules/math-lib/index.lua
 ```
 
 **Use with path operations:**
@@ -327,7 +327,7 @@ end
 `require.resolve()` uses the same search order as `require()`:
 
 1. Built-in modules (fs, path, events, util, table)
-2. node_modules directories (walking up)
+2. hype_modules directories (walking up)
 3. ~/.hype/modules/ directory
 4. Error if not found
 

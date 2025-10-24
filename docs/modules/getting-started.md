@@ -98,8 +98,8 @@ When you call `require("module-name")`:
 ```
 1. require.cache (already loaded?)
 2. Built-in modules (fs, path, events, util, table)
-3. ./node_modules/module-name/
-4. ../node_modules/module-name/
+3. ./hype_modules/module-name/
+4. ../hype_modules/module-name/
 5. ~/.hype/modules/module-name/
 ```
 

@@ -196,8 +196,8 @@ end)
 require("express")
   ↓
 1. Check cache
-2. Check ./node_modules/express/hype.json
-3. Check ../node_modules/express/hype.json
+2. Check ./hype_modules/express/hype.json
+3. Check ../hype_modules/express/hype.json
 4. Check built-in modules
 5. Check global registry (~/.hype/modules/)
 ```

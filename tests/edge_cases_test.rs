@@ -29,7 +29,7 @@ mod error_recovery {
     fn test_recover_from_missing_manifest() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("no_manifest");
@@ -52,7 +52,7 @@ mod error_recovery {
     fn test_recover_from_invalid_manifest() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("bad_manifest");
@@ -73,7 +73,7 @@ mod error_recovery {
     fn test_recover_from_circular_dep() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let mod_a = modules_dir.join("circ_a");
@@ -99,7 +99,7 @@ mod error_recovery {
     fn test_recover_from_module_load_failure() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("fail_module");
@@ -121,7 +121,7 @@ mod error_recovery {
     fn test_recover_from_null_exports() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("null_module");
@@ -149,7 +149,7 @@ mod error_recovery {
         {
             let temp = TempDir::new().unwrap();
             let base = temp.path();
-            let modules_dir = base.join("node_modules");
+            let modules_dir = base.join("hype_modules");
             fs::create_dir_all(&modules_dir).unwrap();
 
             let module_dir = modules_dir.join("restricted");
@@ -176,7 +176,7 @@ mod error_recovery {
     fn test_recover_from_disk_full_simulation() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("normal");
@@ -196,7 +196,7 @@ mod error_recovery {
     fn test_recover_from_concurrent_writes() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         for i in 0..5 {
@@ -224,7 +224,7 @@ mod error_recovery {
     fn test_graceful_shutdown_with_cache() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         for i in 0..3 {
@@ -250,7 +250,7 @@ mod error_recovery {
     fn test_cache_state_consistency() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         for i in 0..3 {
@@ -297,7 +297,7 @@ mod boundary_conditions {
     fn test_empty_module_file() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("empty");
@@ -318,7 +318,7 @@ mod boundary_conditions {
     fn test_module_with_only_comments() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("comments");
@@ -343,7 +343,7 @@ mod boundary_conditions {
     fn test_very_large_module_export() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("huge");
@@ -370,7 +370,7 @@ mod boundary_conditions {
     fn test_deeply_nested_export_structure() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("nested");
@@ -396,7 +396,7 @@ mod boundary_conditions {
     fn test_special_export_types() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("types");
@@ -445,7 +445,7 @@ mod boundary_conditions {
         }
         fs::create_dir_all(&long_path).unwrap();
 
-        let modules_dir = long_path.join("node_modules");
+        let modules_dir = long_path.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let module_dir = modules_dir.join("longpath_module");
@@ -465,7 +465,7 @@ mod boundary_conditions {
     fn test_recursive_module_require() {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
-        let modules_dir = base.join("node_modules");
+        let modules_dir = base.join("hype_modules");
         fs::create_dir_all(&modules_dir).unwrap();
 
         let mod_a = modules_dir.join("rec_a");

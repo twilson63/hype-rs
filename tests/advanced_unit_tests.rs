@@ -60,16 +60,16 @@ mod module_resolution_edge_cases {
         let base = temp.path();
         
         create_test_directory_structure(base).unwrap();
-        fs::create_dir_all(base.join("node_modules")).unwrap();
+        fs::create_dir_all(base.join("hype_modules")).unwrap();
         
-        let mixed_module = base.join("node_modules/mixed");
+        let mixed_module = base.join("hype_modules/mixed");
         fs::create_dir_all(&mixed_module).unwrap();
         create_test_module(&mixed_module, "index", "return {}").unwrap();
         
         let resolver = ModuleResolver::new(base.to_path_buf());
         let result = resolver.resolve("mixed");
         
-        assert!(result.is_ok(), "Should resolve modules in node_modules");
+        assert!(result.is_ok(), "Should resolve modules in hype_modules");
     }
 
     #[test]
@@ -106,9 +106,9 @@ mod module_resolution_edge_cases {
         fs::create_dir_all(&spaced).unwrap();
         create_test_module(&spaced, "module", "return {}").unwrap();
         
-        fs::create_dir_all(base.join("node_modules")).unwrap();
-        fs::create_dir_all(base.join("node_modules/with spaces module")).unwrap();
-        create_test_module(&base.join("node_modules/with spaces module"), "index", "return {}").unwrap();
+        fs::create_dir_all(base.join("hype_modules")).unwrap();
+        fs::create_dir_all(base.join("hype_modules/with spaces module")).unwrap();
+        create_test_module(&base.join("hype_modules/with spaces module"), "index", "return {}").unwrap();
         
         let resolver = ModuleResolver::new(base.to_path_buf());
         let result = resolver.resolve("with spaces module");
@@ -147,8 +147,8 @@ mod module_resolution_edge_cases {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
         
-        fs::create_dir_all(base.join("node_modules")).unwrap();
-        create_test_module(&base.join("node_modules"), "normalized", "return {}").unwrap();
+        fs::create_dir_all(base.join("hype_modules")).unwrap();
+        create_test_module(&base.join("hype_modules"), "normalized", "return {}").unwrap();
         
         let resolver = ModuleResolver::new(base.to_path_buf());
         let result1 = resolver.resolve("normalized");
@@ -162,8 +162,8 @@ mod module_resolution_edge_cases {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
         
-        fs::create_dir_all(base.join("node_modules/TestModule")).unwrap();
-        create_test_module(&base.join("node_modules/TestModule"), "index", "return {}").unwrap();
+        fs::create_dir_all(base.join("hype_modules/TestModule")).unwrap();
+        create_test_module(&base.join("hype_modules/TestModule"), "index", "return {}").unwrap();
         
         let resolver = ModuleResolver::new(base.to_path_buf());
         
@@ -555,8 +555,8 @@ mod module_caching_edge_cases {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
         
-        fs::create_dir_all(base.join("node_modules")).unwrap();
-        let module_path = base.join("node_modules/test_mod");
+        fs::create_dir_all(base.join("hype_modules")).unwrap();
+        let module_path = base.join("hype_modules/test_mod");
         fs::create_dir_all(&module_path).unwrap();
         create_test_module(&module_path, "index", "return { version = 1 }").unwrap();
         
@@ -805,8 +805,8 @@ mod integration_edge_cases {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
         
-        fs::create_dir_all(base.join("node_modules/fs")).unwrap();
-        create_test_module(&base.join("node_modules/fs"), "index", "return {}").unwrap();
+        fs::create_dir_all(base.join("hype_modules/fs")).unwrap();
+        create_test_module(&base.join("hype_modules/fs"), "index", "return {}").unwrap();
         
         let lua = Lua::new();
         let loader = Arc::new(Mutex::new(ModuleLoader::new(base.to_path_buf())));
@@ -831,8 +831,8 @@ mod integration_edge_cases {
         let temp = TempDir::new().unwrap();
         let base = temp.path();
         
-        fs::create_dir_all(base.join("node_modules/mymod")).unwrap();
-        create_test_module(&base.join("node_modules/mymod"), "index", "return {}").unwrap();
+        fs::create_dir_all(base.join("hype_modules/mymod")).unwrap();
+        create_test_module(&base.join("hype_modules/mymod"), "index", "return {}").unwrap();
         
         let mut loader = ModuleLoader::new(base.to_path_buf());
         
