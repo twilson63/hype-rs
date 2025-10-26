@@ -11,6 +11,8 @@ A fast, lightweight command-line Lua runtime written in Rust that enables you to
 - Comprehensive error handling with meaningful messages
 - Security sandboxing to prevent dangerous operations
 - Cross-platform support (Windows, macOS, Linux)
+- Global package installation with executable CLI tools
+- Module system with `require()` support
 
 🚀 **Performance**
 - Fast startup time (~50ms for simple scripts)
@@ -124,15 +126,54 @@ hype --timeout 30 long_running_script.lua
 hype --verbose --debug --timeout 60 script.lua
 ```
 
+## Global Package Installation
+
+Install packages globally to create system-wide CLI commands:
+
+```bash
+# Create a package with bin field in hype.json
+cd my-cli-tool
+hype install
+
+# Use your command anywhere
+mytool <args>
+```
+
+**Quick Example:**
+
+```json
+{
+  "name": "http-tools",
+  "version": "1.0.0",
+  "bin": {
+    "hfetch": "bin/fetch.lua"
+  }
+}
+```
+
+```bash
+hype install
+hfetch https://api.github.com/users/octocat --json
+```
+
+See the [Global Installation Guide](./docs/features/global-install.md) for complete documentation.
+
 ## CLI Reference
 
 ```
 USAGE:
     hype [OPTIONS] <SCRIPT> [ARGS]...
+    hype install [PATH] [OPTIONS]
+    hype uninstall <NAME>
+    hype list
+    hype which <COMMAND>
 
-ARGUMENTS:
-    <SCRIPT>      Path to the Lua script to execute
-    [ARGS]...     Arguments to pass to the Lua script
+COMMANDS:
+    run         Execute a Lua script (default)
+    install     Install package globally
+    uninstall   Remove globally installed package
+    list        List installed packages
+    which       Show which package provides a command
 
 OPTIONS:
     -v, --verbose    Enable verbose output
@@ -340,10 +381,11 @@ We welcome contributions! See [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for d
 
 Comprehensive documentation is available in the [docs/](./docs/) directory:
 
+- **[Global Installation Guide](./docs/features/global-install.md)** - Install packages globally and create CLI tools
 - **[Module System Guide](./docs/modules/)** - Learn how to use the module system with `require()`
 - **[Getting Started with Modules](./docs/modules/getting-started.md)** - Quick examples and tutorials
 - **[require() API Reference](./docs/modules/require-api.md)** - Full API documentation
-- **[Built-in Modules](./docs/modules/builtin-modules.md)** - Available modules (fs, path, events, util, table)
+- **[Built-in Modules](./docs/modules/builtin-modules.md)** - Available modules (fs, path, events, util, table, http)
 - **[Testing Guide](./docs/testing.md)** - How to run tests and test coverage information
 - **[Performance Benchmarks](./docs/performance.md)** - Performance metrics and optimization details
 - **[Contributing Guide](./.github/CONTRIBUTING.md)** - Guidelines for contributing to the project
@@ -355,17 +397,21 @@ See [docs/README.md](./docs/README.md) for the complete documentation hub.
 ### Completed Features ✅
 
 - [x] Module system (`require()` support) - Phase 4 Complete
-- [x] Built-in modules (fs, path, events, util, table)
+- [x] Built-in modules (fs, path, events, util, table, http)
 - [x] Module caching and resolution
+- [x] Global package installation with bin executables - Phase 6 Complete
+- [x] CLI package management (install, uninstall, list, which)
 - [x] Comprehensive testing (265 tests, 97%+ coverage)
 - [x] Performance benchmarking
 
 ### Upcoming Features
 
+- [ ] Remote package registry (publish/install from registry)
+- [ ] PATH auto-configuration (`hype setup`)
+- [ ] Package version management and upgrades
 - [ ] Full standard library implementation
 - [ ] Debugging support (breakpoints, stepping)
 - [ ] REPL (interactive mode)
-- [ ] Package manager integration
 - [ ] Performance optimizations
 - [ ] C API for embedding
 

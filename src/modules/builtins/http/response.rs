@@ -10,7 +10,12 @@ pub struct HttpResponse {
 }
 
 impl HttpResponse {
-    pub fn new(status: u16, status_text: String, headers: HashMap<String, String>, body: String) -> Self {
+    pub fn new(
+        status: u16,
+        status_text: String,
+        headers: HashMap<String, String>,
+        body: String,
+    ) -> Self {
         Self {
             status,
             status_text,
@@ -34,7 +39,9 @@ impl HttpResponse {
     #[cfg(feature = "http")]
     pub async fn from_reqwest(response: reqwest::Response) -> Result<Self, reqwest::Error> {
         let status = response.status().as_u16();
-        let status_text = response.status().canonical_reason()
+        let status_text = response
+            .status()
+            .canonical_reason()
             .unwrap_or("Unknown")
             .to_string();
 
@@ -58,12 +65,7 @@ mod tests {
     #[test]
     fn test_response_creation() {
         let headers = HashMap::new();
-        let response = HttpResponse::new(
-            200,
-            "OK".to_string(),
-            headers,
-            "test body".to_string(),
-        );
+        let response = HttpResponse::new(200, "OK".to_string(), headers, "test body".to_string());
 
         assert_eq!(response.status, 200);
         assert_eq!(response.status_text, "OK");
@@ -74,17 +76,19 @@ mod tests {
     #[test]
     fn test_response_ok() {
         let headers = HashMap::new();
-        
+
         let response = HttpResponse::new(200, "OK".to_string(), headers.clone(), String::new());
         assert!(response.ok());
 
         let response = HttpResponse::new(299, "OK".to_string(), headers.clone(), String::new());
         assert!(response.ok());
 
-        let response = HttpResponse::new(300, "Redirect".to_string(), headers.clone(), String::new());
+        let response =
+            HttpResponse::new(300, "Redirect".to_string(), headers.clone(), String::new());
         assert!(!response.ok());
 
-        let response = HttpResponse::new(404, "Not Found".to_string(), headers.clone(), String::new());
+        let response =
+            HttpResponse::new(404, "Not Found".to_string(), headers.clone(), String::new());
         assert!(!response.ok());
 
         let response = HttpResponse::new(500, "Error".to_string(), headers, String::new());

@@ -8,12 +8,9 @@ use super::{HttpClient, HttpResponse};
 #[cfg(feature = "http")]
 pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
     let http_table = lua.create_table()?;
-    
-    let client = Arc::new(
-        HttpClient::new()
-            .map_err(|e| mlua::Error::external(e))?
-    );
-    
+
+    let client = Arc::new(HttpClient::new().map_err(|e| mlua::Error::external(e))?);
+
     register_get(lua, &http_table, client.clone())?;
     register_post(lua, &http_table, client.clone())?;
     register_put(lua, &http_table, client.clone())?;
@@ -23,21 +20,21 @@ pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
     register_fetch(lua, &http_table, client.clone())?;
     register_post_json(lua, &http_table, client.clone())?;
     register_put_json(lua, &http_table, client)?;
-    
+
     Ok(http_table)
 }
 
 #[cfg(not(feature = "http"))]
 pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
     let http_table = lua.create_table()?;
-    
+
     let error_fn = lua.create_function(|_, _: mlua::MultiValue| {
         Err(mlua::Error::external(std::io::Error::new(
             std::io::ErrorKind::Other,
-            "HTTP feature not enabled. Compile with --features http"
+            "HTTP feature not enabled. Compile with --features http",
         )))
     })?;
-    
+
     http_table.set("get", error_fn.clone())?;
     http_table.set("post", error_fn.clone())?;
     http_table.set("put", error_fn.clone())?;
@@ -47,15 +44,14 @@ pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
     http_table.set("fetch", error_fn.clone())?;
     http_table.set("postJson", error_fn.clone())?;
     http_table.set("putJson", error_fn)?;
-    
+
     Ok(http_table)
 }
 
 #[cfg(feature = "http")]
 fn register_get(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let get_fn = lua.create_function(move |lua, url: String| {
-        let response = client.get(&url)
-            .map_err(|e| mlua::Error::external(e))?;
+        let response = client.get(&url).map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
     table.set("get", get_fn)?;
@@ -66,7 +62,8 @@ fn register_get(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Resu
 fn register_post(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let post_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let (body, headers) = parse_request_options(options)?;
-        let response = client.post(&url, body, headers)
+        let response = client
+            .post(&url, body, headers)
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -78,7 +75,8 @@ fn register_post(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Res
 fn register_put(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let put_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let (body, headers) = parse_request_options(options)?;
-        let response = client.put(&url, body, headers)
+        let response = client
+            .put(&url, body, headers)
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -90,7 +88,8 @@ fn register_put(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Resu
 fn register_delete(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let delete_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let headers = options.and_then(|opts| parse_headers(&opts).ok().flatten());
-        let response = client.delete(&url, headers)
+        let response = client
+            .delete(&url, headers)
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -102,9 +101,10 @@ fn register_delete(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::R
 fn register_patch(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let patch_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let (body, headers) = parse_request_options(options)?;
-        
+
         let method = "PATCH";
-        let response = client.fetch(method, &url, body, headers, None)
+        let response = client
+            .fetch(method, &url, body, headers, None)
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -116,9 +116,10 @@ fn register_patch(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Re
 fn register_head(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let head_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let headers = options.and_then(|opts| parse_headers(&opts).ok().flatten());
-        
+
         let method = "HEAD";
-        let response = client.fetch(method, &url, None, headers, None)
+        let response = client
+            .fetch(method, &url, None, headers, None)
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -130,13 +131,9 @@ fn register_head(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Res
 fn register_fetch(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let fetch_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
         let opts = parse_fetch_options(options)?;
-        let response = client.fetch(
-            &opts.method,
-            &url,
-            opts.body,
-            opts.headers,
-            opts.timeout,
-        ).map_err(|e| mlua::Error::external(e))?;
+        let response = client
+            .fetch(&opts.method, &url, opts.body, opts.headers, opts.timeout)
+            .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
     table.set("fetch", fetch_fn)?;
@@ -147,13 +144,13 @@ fn register_fetch(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Re
 fn register_post_json(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let post_json_fn = lua.create_function(move |lua, (url, data): (String, Table)| {
         let json_value = lua_table_to_json(lua, &data)?;
-        let body = serde_json::to_string(&json_value)
-            .map_err(|e| mlua::Error::external(e))?;
-        
+        let body = serde_json::to_string(&json_value).map_err(|e| mlua::Error::external(e))?;
+
         let mut headers = HashMap::new();
         headers.insert("Content-Type".to_string(), "application/json".to_string());
-        
-        let response = client.post(&url, Some(body), Some(headers))
+
+        let response = client
+            .post(&url, Some(body), Some(headers))
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -165,13 +162,13 @@ fn register_post_json(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua
 fn register_put_json(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
     let put_json_fn = lua.create_function(move |lua, (url, data): (String, Table)| {
         let json_value = lua_table_to_json(lua, &data)?;
-        let body = serde_json::to_string(&json_value)
-            .map_err(|e| mlua::Error::external(e))?;
-        
+        let body = serde_json::to_string(&json_value).map_err(|e| mlua::Error::external(e))?;
+
         let mut headers = HashMap::new();
         headers.insert("Content-Type".to_string(), "application/json".to_string());
-        
-        let response = client.put(&url, Some(body), Some(headers))
+
+        let response = client
+            .put(&url, Some(body), Some(headers))
             .map_err(|e| mlua::Error::external(e))?;
         create_response_table(lua, response)
     })?;
@@ -179,36 +176,44 @@ fn register_put_json(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua:
     Ok(())
 }
 
-fn create_response_table<'lua>(lua: &'lua Lua, response: HttpResponse) -> mlua::Result<Table<'lua>> {
+fn create_response_table<'lua>(
+    lua: &'lua Lua,
+    response: HttpResponse,
+) -> mlua::Result<Table<'lua>> {
     let table = lua.create_table()?;
-    
+
     table.set("status", response.status)?;
     table.set("statusText", response.status_text.clone())?;
     table.set("body", response.body.clone())?;
-    
+
     let headers = lua.create_table()?;
     for (k, v) in &response.headers {
         headers.set(k.as_str(), v.as_str())?;
     }
     table.set("headers", headers)?;
-    
+
     let body_for_text = response.body.clone();
-    table.set("text", lua.create_function(move |_, ()| {
-        Ok(body_for_text.clone())
-    })?)?;
-    
+    table.set(
+        "text",
+        lua.create_function(move |_, ()| Ok(body_for_text.clone()))?,
+    )?;
+
     let body_for_json = response.body.clone();
-    table.set("json", lua.create_function(move |lua, ()| {
-        let json: JsonValue = serde_json::from_str(&body_for_json)
-            .map_err(|e| mlua::Error::external(e))?;
-        json_to_lua_value(lua, &json)
-    })?)?;
-    
+    table.set(
+        "json",
+        lua.create_function(move |lua, ()| {
+            let json: JsonValue =
+                serde_json::from_str(&body_for_json).map_err(|e| mlua::Error::external(e))?;
+            json_to_lua_value(lua, &json)
+        })?,
+    )?;
+
     let status = response.status;
-    table.set("ok", lua.create_function(move |_, ()| {
-        Ok(status >= 200 && status < 300)
-    })?)?;
-    
+    table.set(
+        "ok",
+        lua.create_function(move |_, ()| Ok(status >= 200 && status < 300))?,
+    )?;
+
     Ok(table)
 }
 
@@ -228,15 +233,16 @@ fn parse_fetch_options(options: Option<Table>) -> mlua::Result<FetchOptions> {
             timeout: None,
         });
     };
-    
-    let method = opts.get::<_, Option<String>>("method")?
+
+    let method = opts
+        .get::<_, Option<String>>("method")?
         .unwrap_or_else(|| "GET".to_string())
         .to_uppercase();
-    
+
     let body = opts.get::<_, Option<String>>("body")?;
     let headers = parse_headers(&opts)?;
     let timeout = opts.get::<_, Option<u64>>("timeout")?;
-    
+
     Ok(FetchOptions {
         method,
         body,
@@ -245,30 +251,32 @@ fn parse_fetch_options(options: Option<Table>) -> mlua::Result<FetchOptions> {
     })
 }
 
-fn parse_request_options(options: Option<Table>) -> mlua::Result<(Option<String>, Option<HashMap<String, String>>)> {
+fn parse_request_options(
+    options: Option<Table>,
+) -> mlua::Result<(Option<String>, Option<HashMap<String, String>>)> {
     let Some(opts) = options else {
         return Ok((None, None));
     };
-    
+
     let body = opts.get::<_, Option<String>>("body")?;
     let headers = parse_headers(&opts)?;
-    
+
     Ok((body, headers))
 }
 
 fn parse_headers(opts: &Table) -> mlua::Result<Option<HashMap<String, String>>> {
     let headers_table: Option<Table> = opts.get("headers")?;
-    
+
     let Some(headers_table) = headers_table else {
         return Ok(None);
     };
-    
+
     let mut headers = HashMap::new();
     for pair in headers_table.pairs::<String, String>() {
         let (key, value) = pair?;
         headers.insert(key, value);
     }
-    
+
     if headers.is_empty() {
         Ok(None)
     } else {
@@ -311,7 +319,7 @@ fn json_to_lua_value<'lua>(lua: &'lua Lua, value: &JsonValue) -> mlua::Result<Va
 
 fn lua_table_to_json<'lua>(lua: &'lua Lua, table: &Table<'lua>) -> mlua::Result<JsonValue> {
     let len = table.raw_len();
-    
+
     if len > 0 {
         let mut array = Vec::new();
         for i in 1..=len {
@@ -356,12 +364,12 @@ fn lua_value_to_json(lua: &Lua, value: Value) -> mlua::Result<JsonValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_create_http_module() {
         let lua = Lua::new();
         let result = create_http_module(&lua);
-        
+
         #[cfg(feature = "http")]
         {
             assert!(result.is_ok());
@@ -374,27 +382,27 @@ mod tests {
             assert!(http_table.contains_key("postJson").unwrap());
             assert!(http_table.contains_key("putJson").unwrap());
         }
-        
+
         #[cfg(not(feature = "http"))]
         {
             assert!(result.is_ok());
         }
     }
-    
+
     #[test]
     fn test_json_to_lua_value() {
         let lua = Lua::new();
-        
+
         let json = serde_json::json!({
             "name": "test",
             "value": 42,
             "active": true,
             "data": [1, 2, 3]
         });
-        
+
         let result = json_to_lua_value(&lua, &json);
         assert!(result.is_ok());
-        
+
         if let Ok(Value::Table(table)) = result {
             assert!(table.contains_key("name").unwrap());
             assert!(table.contains_key("value").unwrap());
@@ -404,7 +412,7 @@ mod tests {
             panic!("Expected table");
         }
     }
-    
+
     #[test]
     fn test_lua_table_to_json() {
         let lua = Lua::new();
@@ -412,10 +420,10 @@ mod tests {
         table.set("name", "test").unwrap();
         table.set("value", 42).unwrap();
         table.set("active", true).unwrap();
-        
+
         let result = lua_table_to_json(&lua, &table);
         assert!(result.is_ok());
-        
+
         let json = result.unwrap();
         assert!(json.is_object());
         assert_eq!(json["name"], "test");

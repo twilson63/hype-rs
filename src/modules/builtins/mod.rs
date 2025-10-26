@@ -103,7 +103,7 @@ impl BuiltinRegistry {
     pub fn clear(&mut self) {
         self.cache.clear();
     }
-    
+
     /// Load a built-in module for Lua with function bindings
     ///
     /// For modules that need callable Lua functions (like HTTP),
@@ -116,23 +116,30 @@ impl BuiltinRegistry {
     /// # Returns
     /// A Lua Value (typically a Table) or an error
     #[cfg(feature = "http")]
-    pub fn load_with_lua<'lua>(&mut self, lua: &'lua mlua::Lua, name: &str) -> Result<mlua::Value<'lua>, HypeError> {
+    pub fn load_with_lua<'lua>(
+        &mut self,
+        lua: &'lua mlua::Lua,
+        name: &str,
+    ) -> Result<mlua::Value<'lua>, HypeError> {
         match name {
-            "http" => {
-                http::lua_bindings::create_http_module(lua)
-                    .map(mlua::Value::Table)
-                    .map_err(|e| HypeError::Execution(format!("Failed to create HTTP module: {}", e)))
-            }
+            "http" => http::lua_bindings::create_http_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create HTTP module: {}", e))),
             _ => {
                 let json_exports = self.load(name)?;
-                crate::lua::require::json_to_lua(lua, &json_exports)
-                    .map_err(|e| HypeError::Execution(format!("Failed to convert module to Lua: {}", e)))
+                crate::lua::require::json_to_lua(lua, &json_exports).map_err(|e| {
+                    HypeError::Execution(format!("Failed to convert module to Lua: {}", e))
+                })
             }
         }
     }
-    
+
     #[cfg(not(feature = "http"))]
-    pub fn load_with_lua<'lua>(&mut self, lua: &'lua mlua::Lua, name: &str) -> Result<mlua::Value<'lua>, HypeError> {
+    pub fn load_with_lua<'lua>(
+        &mut self,
+        lua: &'lua mlua::Lua,
+        name: &str,
+    ) -> Result<mlua::Value<'lua>, HypeError> {
         let json_exports = self.load(name)?;
         crate::lua::require::json_to_lua(lua, &json_exports)
             .map_err(|e| HypeError::Execution(format!("Failed to convert module to Lua: {}", e)))

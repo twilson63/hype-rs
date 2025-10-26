@@ -34,11 +34,15 @@ pub fn setup_require_fn(lua: &Lua, loader: Arc<Mutex<ModuleLoader>>) -> Result<(
             })?;
 
             let is_builtin = loader_lock.is_builtin(&module_id);
-            
+
             if is_builtin {
-                return loader_lock.load_builtin_with_lua(lua_ctx, &module_id)
+                return loader_lock
+                    .load_builtin_with_lua(lua_ctx, &module_id)
                     .map_err(|err| {
-                        mlua::Error::RuntimeError(format!("Failed to load builtin module '{}': {}", module_id, err))
+                        mlua::Error::RuntimeError(format!(
+                            "Failed to load builtin module '{}': {}",
+                            module_id, err
+                        ))
                     });
             }
 

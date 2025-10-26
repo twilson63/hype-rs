@@ -166,7 +166,7 @@ print(__filename)  -- "/path/to/myapp/lib/utils.lua"
 ```
 
 ### hype.json
-Metadata file for modules and projects. Declares module information and dependencies.
+Metadata file for modules and projects. Declares module information, dependencies, and executable commands.
 
 ```json
 {
@@ -176,9 +176,14 @@ Metadata file for modules and projects. Declares module information and dependen
   "description": "My application",
   "dependencies": {
     "utils-lib": "^1.0.0"
+  },
+  "bin": {
+    "mycommand": "bin/cli.lua"
   }
 }
 ```
+
+The optional `bin` field maps command names to executable scripts. When installed globally with `hype install`, these commands become available system-wide. See [Global Installation](../features/global-install.md) for details.
 
 ---
 
@@ -269,6 +274,55 @@ local table_utils = require("table")
 
 ---
 
+## Global Packages and Executables
+
+Modules can be packaged and installed globally to create system-wide CLI tools.
+
+### Creating Executable Packages
+
+Add a `bin` field to your `hype.json`:
+
+```json
+{
+  "name": "my-cli-tool",
+  "version": "1.0.0",
+  "main": "index.lua",
+  "bin": {
+    "mytool": "bin/cli.lua"
+  }
+}
+```
+
+### Installing Globally
+
+```bash
+cd my-cli-tool
+hype install
+```
+
+This creates `~/.hype/bin/mytool` which can be run from anywhere (after adding to PATH).
+
+### Relationship Between Modules and Packages
+
+- **Modules** are reusable code loaded with `require()`
+- **Packages** are directories with `hype.json` containing modules and/or executables
+- **Global packages** are installed to `~/.hype/packages/` and can expose CLI commands
+- **Executables** (via `bin` field) are standalone scripts that can use modules
+
+**Example Structure:**
+
+```
+my-package/
+├── hype.json           # Declares name, version, bin commands
+├── index.lua           # Main module (loaded with require)
+├── bin/                # Executable CLI scripts
+│   └── cli.lua
+└── lib/                # Internal modules
+    └── utils.lua
+```
+
+See **[Global Installation Guide](../features/global-install.md)** for complete documentation.
+
 ## Further Reading
 
 Explore more about the module system:
@@ -289,6 +343,12 @@ Explore more about the module system:
    - Creating custom modules
    - Common patterns and best practices
    - Troubleshooting guide
+
+4. **[Global Installation Guide](../features/global-install.md)**
+   - Install packages globally
+   - Create CLI tools with the bin field
+   - Manage installed packages
+   - PATH setup for different shells
 
 ---
 

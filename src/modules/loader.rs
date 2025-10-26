@@ -218,17 +218,21 @@ impl ModuleLoader {
     pub fn detector(&self) -> &CircularDependencyDetector {
         &self.detector
     }
-    
+
     /// Check if a module is a built-in module
     pub fn is_builtin(&self, module_id: &str) -> bool {
         self.builtins.is_builtin(module_id)
     }
-    
+
     /// Load a built-in module with Lua bindings
     ///
     /// For modules that need callable Lua functions (like HTTP),
     /// this returns the Lua bindings directly instead of JSON metadata
-    pub fn load_builtin_with_lua<'lua>(&mut self, lua: &'lua mlua::Lua, module_id: &str) -> Result<mlua::Value<'lua>, HypeError> {
+    pub fn load_builtin_with_lua<'lua>(
+        &mut self,
+        lua: &'lua mlua::Lua,
+        module_id: &str,
+    ) -> Result<mlua::Value<'lua>, HypeError> {
         self.builtins.load_with_lua(lua, module_id)
     }
 

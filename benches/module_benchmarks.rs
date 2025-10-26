@@ -95,12 +95,7 @@ impl BenchmarkResult {
     }
 }
 
-fn bench_with_target<F>(
-    name: &str,
-    iterations: usize,
-    target_ns: u128,
-    mut f: F,
-) -> BenchmarkResult
+fn bench_with_target<F>(name: &str, iterations: usize, target_ns: u128, mut f: F) -> BenchmarkResult
 where
     F: FnMut() -> Result<(), Box<dyn std::error::Error>>,
 {
@@ -127,206 +122,151 @@ where
 fn bench_first_module_load() -> BenchmarkResult {
     let target = 50_000_000; // 50ms in nanoseconds
 
-    bench_with_target(
-        "bench_first_module_load",
-        10,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            let _result = loader.require("fs")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_first_module_load", 10, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        let _result = loader.require("fs")?;
+        Ok(())
+    })
 }
 
 fn bench_cached_module_load() -> BenchmarkResult {
     let target = 1_000_000; // 1ms in nanoseconds
 
-    bench_with_target(
-        "bench_cached_module_load",
-        100,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            loader.require("fs")?;
-            loader.require("fs")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_cached_module_load", 100, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        loader.require("fs")?;
+        loader.require("fs")?;
+        Ok(())
+    })
 }
 
 fn bench_builtin_module_load() -> BenchmarkResult {
     let target = 10_000_000; // 10ms in nanoseconds
 
-    bench_with_target(
-        "bench_builtin_module_load",
-        50,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            let _path = loader.require("path")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_builtin_module_load", 50, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        let _path = loader.require("path")?;
+        Ok(())
+    })
 }
 
 fn bench_custom_module_load() -> BenchmarkResult {
     let target = 500_000_000; // 500ms in nanoseconds
 
-    bench_with_target(
-        "bench_custom_module_load",
-        20,
-        target,
-        || {
-            let temp_dir = TempDir::new()?;
-            let temp_path = temp_dir.path();
-            let hype_modules = temp_path.join("hype_modules");
-            fs::create_dir_all(&hype_modules)?;
+    bench_with_target("bench_custom_module_load", 20, target, || {
+        let temp_dir = TempDir::new()?;
+        let temp_path = temp_dir.path();
+        let hype_modules = temp_path.join("hype_modules");
+        fs::create_dir_all(&hype_modules)?;
 
-            let custom_module_dir = hype_modules.join("custom-module");
-            fs::create_dir_all(&custom_module_dir)?;
+        let custom_module_dir = hype_modules.join("custom-module");
+        fs::create_dir_all(&custom_module_dir)?;
 
-            let test_file = custom_module_dir.join("index.lua");
-            fs::write(&test_file, "return { test = 'value' }")?;
+        let test_file = custom_module_dir.join("index.lua");
+        fs::write(&test_file, "return { test = 'value' }")?;
 
-            let mut loader = ModuleLoader::new(temp_path.to_path_buf());
-            let _result = loader.require("custom-module")?;
+        let mut loader = ModuleLoader::new(temp_path.to_path_buf());
+        let _result = loader.require("custom-module")?;
 
-            Ok(())
-        },
-    )
+        Ok(())
+    })
 }
 
 // Operation benchmarks
 fn bench_require_function_call() -> BenchmarkResult {
     let target = 5_000_000; // 5ms in nanoseconds
 
-    bench_with_target(
-        "bench_require_function_call",
-        50,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            let _result = loader.require("fs")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_require_function_call", 50, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        let _result = loader.require("fs")?;
+        Ok(())
+    })
 }
 
 fn bench_cache_lookup_only() -> BenchmarkResult {
     let target = 100_000; // 100µs in nanoseconds
 
-    bench_with_target(
-        "bench_cache_lookup_only",
-        1000,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            loader.require("fs")?;
-            let _cached = loader.get_cached("fs")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_cache_lookup_only", 1000, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        loader.require("fs")?;
+        let _cached = loader.get_cached("fs")?;
+        Ok(())
+    })
 }
 
 fn bench_circular_dep_detection() -> BenchmarkResult {
     let target = 1_000_000; // 1ms in nanoseconds
 
-    bench_with_target(
-        "bench_circular_dep_detection",
-        100,
-        target,
-        || {
-            let loader = ModuleLoader::new(PathBuf::from("."));
+    bench_with_target("bench_circular_dep_detection", 100, target, || {
+        let loader = ModuleLoader::new(PathBuf::from("."));
 
-            let detector = loader.detector();
-            let check_result = detector.check("module-a");
-            if check_result.is_ok() {
-                Ok(())
-            } else {
-                Err("Expected no circular dependency".into())
-            }
-        },
-    )
+        let detector = loader.detector();
+        let check_result = detector.check("module-a");
+        if check_result.is_ok() {
+            Ok(())
+        } else {
+            Err("Expected no circular dependency".into())
+        }
+    })
 }
 
 fn bench_module_resolution() -> BenchmarkResult {
     let target = 5_000_000; // 5ms in nanoseconds
 
-    bench_with_target(
-        "bench_module_resolution",
-        100,
-        target,
-        || {
-            let resolver = ModuleResolver::new(PathBuf::from("."));
-            let _path = resolver.resolve("fs")?;
-            Ok(())
-        },
-    )
+    bench_with_target("bench_module_resolution", 100, target, || {
+        let resolver = ModuleResolver::new(PathBuf::from("."));
+        let _path = resolver.resolve("fs")?;
+        Ok(())
+    })
 }
 
 // Memory benchmarks
 fn bench_module_cache_memory() -> BenchmarkResult {
     let target = 50_000_000; // 50ms in nanoseconds
 
-    bench_with_target(
-        "bench_module_cache_memory",
-        5,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
+    bench_with_target("bench_module_cache_memory", 5, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
 
-            for module in &["fs", "path", "events", "util", "table"] {
-                loader.require(module)?;
-            }
+        for module in &["fs", "path", "events", "util", "table"] {
+            loader.require(module)?;
+        }
 
-            let cached = loader.cached_modules()?;
-            if cached.len() != 5 {
-                return Err("Expected 5 cached modules".into());
-            }
+        let cached = loader.cached_modules()?;
+        if cached.len() != 5 {
+            return Err("Expected 5 cached modules".into());
+        }
 
-            Ok(())
-        },
-    )
+        Ok(())
+    })
 }
 
 fn bench_export_table_conversion() -> BenchmarkResult {
     let target = 10_000_000; // 10ms in nanoseconds
 
-    bench_with_target(
-        "bench_export_table_conversion",
-        50,
-        target,
-        || {
-            let mut loader = ModuleLoader::new(PathBuf::from("."));
-            let _exports = loader.require("fs")?;
+    bench_with_target("bench_export_table_conversion", 50, target, || {
+        let mut loader = ModuleLoader::new(PathBuf::from("."));
+        let _exports = loader.require("fs")?;
 
-            let exports = loader.require("fs")?;
-            if !exports.is_object() {
-                return Err("Expected object exports".into());
-            }
+        let exports = loader.require("fs")?;
+        if !exports.is_object() {
+            return Err("Expected object exports".into());
+        }
 
-            Ok(())
-        },
-    )
+        Ok(())
+    })
 }
 
 fn bench_module_environment_setup() -> BenchmarkResult {
     let target = 1_000_000; // 1ms in nanoseconds
 
-    bench_with_target(
-        "bench_module_environment_setup",
-        30,
-        target,
-        || {
-            let loader = ModuleLoader::new(PathBuf::from("."));
-            let _registry = loader.registry();
-            let _resolver = loader.resolver();
-            let _detector = loader.detector();
+    bench_with_target("bench_module_environment_setup", 30, target, || {
+        let loader = ModuleLoader::new(PathBuf::from("."));
+        let _registry = loader.registry();
+        let _resolver = loader.resolver();
+        let _detector = loader.detector();
 
-            Ok(())
-        },
-    )
+        Ok(())
+    })
 }
 
 fn print_header() {
@@ -391,11 +331,18 @@ fn main() {
     let failed = all_results.iter().filter(|r| r.status() == "✗").count();
     let untested = all_results.iter().filter(|r| r.status() == " ").count();
 
-    println!("║ Passed: {} | Failed: {} | Untested: {} {}║",
-             passed,
-             failed,
-             untested,
-             " ".repeat(70 - format!("Passed: {} | Failed: {} | Untested: {} ", passed, failed, untested).len())
+    println!(
+        "║ Passed: {} | Failed: {} | Untested: {} {}║",
+        passed,
+        failed,
+        untested,
+        " ".repeat(
+            70 - format!(
+                "Passed: {} | Failed: {} | Untested: {} ",
+                passed, failed, untested
+            )
+            .len()
+        )
     );
 
     print_footer();

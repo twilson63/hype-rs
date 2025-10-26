@@ -1,0 +1,21 @@
+{
+  "name": "http-cli-tools",
+  "version": "1.0.0",
+  "description": "Simple HTTP CLI tools built with hype-rs",
+  "author": "Hype-RS Examples",
+  "license": "MIT",
+  "main": "lib/utils.lua",
+  "bin": {
+    "hfetch": "bin/fetch.lua",
+    "hpost": "bin/post.lua"
+  },
+  "keywords": [
+    "http",
+    "cli",
+    "tools",
+    "hype-rs"
+  ],
+  "engines": {
+    "hype": ">=1.0.0"
+  }
+}

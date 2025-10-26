@@ -10,7 +10,8 @@ use crate::engine::timeout::{TimeoutError, TimeoutManager};
 use crate::error::{HypeError, Result};
 use crate::file_io::read_lua_script;
 use crate::lua::{
-    create_cli_config, create_cli_security_policy, LuaStateConfig, LuaStateManager, SecurityPolicy, setup_require_fn,
+    create_cli_config, create_cli_security_policy, setup_require_fn, LuaStateConfig,
+    LuaStateManager, SecurityPolicy,
 };
 use crate::modules::loader::ModuleLoader;
 

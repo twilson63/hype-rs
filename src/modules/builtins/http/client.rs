@@ -22,8 +22,7 @@ impl HttpClient {
                 .build()
                 .map_err(|e| HttpError::RuntimeError(e.to_string()))?;
 
-            let runtime = Runtime::new()
-                .map_err(|e| HttpError::RuntimeError(e.to_string()))?;
+            let runtime = Runtime::new().map_err(|e| HttpError::RuntimeError(e.to_string()))?;
 
             Ok(Self { client, runtime })
         }
@@ -40,17 +39,26 @@ impl HttpClient {
     pub fn get(&self, url: &str) -> Result<HttpResponse> {
         self.runtime.block_on(async {
             let response = self.client.get(url).send().await?;
-            HttpResponse::from_reqwest(response).await.map_err(Into::into)
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
         })
     }
 
     #[cfg(not(feature = "http"))]
     pub fn get(&self, _url: &str) -> Result<HttpResponse> {
-        Err(HttpError::RuntimeError("HTTP feature not enabled".to_string()))
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 
     #[cfg(feature = "http")]
-    pub fn post(&self, url: &str, body: Option<String>, headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
+    pub fn post(
+        &self,
+        url: &str,
+        body: Option<String>,
+        headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
         self.runtime.block_on(async {
             let mut request = self.client.post(url);
 
@@ -65,17 +73,31 @@ impl HttpClient {
             }
 
             let response = request.send().await?;
-            HttpResponse::from_reqwest(response).await.map_err(Into::into)
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
         })
     }
 
     #[cfg(not(feature = "http"))]
-    pub fn post(&self, _url: &str, _body: Option<String>, _headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
-        Err(HttpError::RuntimeError("HTTP feature not enabled".to_string()))
+    pub fn post(
+        &self,
+        _url: &str,
+        _body: Option<String>,
+        _headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 
     #[cfg(feature = "http")]
-    pub fn put(&self, url: &str, body: Option<String>, headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
+    pub fn put(
+        &self,
+        url: &str,
+        body: Option<String>,
+        headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
         self.runtime.block_on(async {
             let mut request = self.client.put(url);
 
@@ -90,17 +112,30 @@ impl HttpClient {
             }
 
             let response = request.send().await?;
-            HttpResponse::from_reqwest(response).await.map_err(Into::into)
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
         })
     }
 
     #[cfg(not(feature = "http"))]
-    pub fn put(&self, _url: &str, _body: Option<String>, _headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
-        Err(HttpError::RuntimeError("HTTP feature not enabled".to_string()))
+    pub fn put(
+        &self,
+        _url: &str,
+        _body: Option<String>,
+        _headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 
     #[cfg(feature = "http")]
-    pub fn delete(&self, url: &str, headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
+    pub fn delete(
+        &self,
+        url: &str,
+        headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
         self.runtime.block_on(async {
             let mut request = self.client.delete(url);
 
@@ -111,13 +146,21 @@ impl HttpClient {
             }
 
             let response = request.send().await?;
-            HttpResponse::from_reqwest(response).await.map_err(Into::into)
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
         })
     }
 
     #[cfg(not(feature = "http"))]
-    pub fn delete(&self, _url: &str, _headers: Option<HashMap<String, String>>) -> Result<HttpResponse> {
-        Err(HttpError::RuntimeError("HTTP feature not enabled".to_string()))
+    pub fn delete(
+        &self,
+        _url: &str,
+        _headers: Option<HashMap<String, String>>,
+    ) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 
     #[cfg(feature = "http")]
@@ -138,7 +181,12 @@ impl HttpClient {
                 "PATCH" => self.client.patch(url),
                 "HEAD" => self.client.head(url),
                 "OPTIONS" => self.client.request(reqwest::Method::OPTIONS, url),
-                _ => return Err(HttpError::RequestError(format!("Unsupported HTTP method: {}", method))),
+                _ => {
+                    return Err(HttpError::RequestError(format!(
+                        "Unsupported HTTP method: {}",
+                        method
+                    )))
+                }
             };
 
             if let Some(headers_map) = headers {
@@ -156,7 +204,9 @@ impl HttpClient {
             }
 
             let response = request.send().await?;
-            HttpResponse::from_reqwest(response).await.map_err(Into::into)
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
         })
     }
 
@@ -169,7 +219,9 @@ impl HttpClient {
         _headers: Option<HashMap<String, String>>,
         _timeout: Option<u64>,
     ) -> Result<HttpResponse> {
-        Err(HttpError::RuntimeError("HTTP feature not enabled".to_string()))
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 }
 
@@ -188,7 +240,7 @@ mod tests {
         let result = HttpClient::new();
         #[cfg(feature = "http")]
         assert!(result.is_ok());
-        
+
         #[cfg(not(feature = "http"))]
         assert!(result.is_err());
     }
@@ -199,7 +251,7 @@ mod tests {
     fn test_http_get() {
         let client = HttpClient::new().unwrap();
         let result = client.get("https://httpbin.org/get");
-        
+
         if result.is_ok() {
             let response = result.unwrap();
             assert_eq!(response.status, 200);
@@ -215,9 +267,9 @@ mod tests {
         let body = Some(r#"{"test": true}"#.to_string());
         let mut headers = HashMap::new();
         headers.insert("Content-Type".to_string(), "application/json".to_string());
-        
+
         let result = client.post("https://httpbin.org/post", body, Some(headers));
-        
+
         if result.is_ok() {
             let response = result.unwrap();
             assert_eq!(response.status, 200);
@@ -230,7 +282,7 @@ mod tests {
     fn test_http_fetch() {
         let client = HttpClient::new().unwrap();
         let result = client.fetch("GET", "https://httpbin.org/get", None, None, None);
-        
+
         if result.is_ok() {
             let response = result.unwrap();
             assert_eq!(response.status, 200);
@@ -249,7 +301,7 @@ mod tests {
             None,
             Some(1000),
         );
-        
+
         if result.is_err() {
             match result {
                 Err(HttpError::TimeoutError) | Err(HttpError::NetworkError(_)) => (),

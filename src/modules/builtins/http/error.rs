@@ -72,7 +72,7 @@ mod tests {
     fn test_json_error_conversion() {
         let json_err = serde_json::from_str::<serde_json::Value>("invalid json");
         assert!(json_err.is_err());
-        
+
         let http_err: HttpError = json_err.unwrap_err().into();
         match http_err {
             HttpError::JsonParseError(_) => (),

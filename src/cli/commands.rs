@@ -1,4 +1,7 @@
 use crate::cli::args::ArgumentParser;
+use crate::cli::install::{
+    install_package, list_packages, uninstall_package, which_command, InstallArgs,
+};
 use crate::cli::parser::CliArgs;
 use crate::engine::{ExecutionConfig, ExecutionEngine, ExecutionResult, OutputFormat};
 use crate::error::HypeError;
@@ -185,4 +188,29 @@ pub fn show_version() {
     println!("Authors: {}", env!("CARGO_PKG_AUTHORS"));
     println!("Description: {}", env!("CARGO_PKG_DESCRIPTION"));
     println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
+}
+
+pub fn handle_install_command(
+    path: Option<std::path::PathBuf>,
+    force: bool,
+    verbose: bool,
+) -> Result<(), HypeError> {
+    let args = InstallArgs {
+        path,
+        force,
+        verbose,
+    };
+    install_package(args)
+}
+
+pub fn handle_uninstall_command(name: String, verbose: bool) -> Result<(), HypeError> {
+    uninstall_package(name, verbose)
+}
+
+pub fn handle_list_command(json: bool, verbose: bool) -> Result<(), HypeError> {
+    list_packages(verbose, json)
+}
+
+pub fn handle_which_command(command: String) -> Result<(), HypeError> {
+    which_command(command)
 }

@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -11,6 +12,9 @@ const VERSION_PATTERN: &str = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?
 
 /// Valid module name characters: alphanumeric, hyphen, underscore
 const NAME_PATTERN: &str = r"^[a-zA-Z0-9_-]{1,255}$";
+
+/// Valid command name characters: alphanumeric, hyphen, underscore (1-64 chars)
+const COMMAND_NAME_PATTERN: &str = r"^[a-zA-Z0-9_-]{1,64}$";
 
 /// Module manifest structure parsed from hype.json or similar.
 ///
@@ -28,6 +32,9 @@ pub struct HypeManifest {
     pub main: Option<String>,
     /// Optional list of dependencies
     pub dependencies: Option<Vec<String>>,
+    /// Optional binary/command mappings (command_name -> script_path)
+    #[serde(default)]
+    pub bin: Option<HashMap<String, String>>,
 }
 
 impl HypeManifest {
@@ -39,6 +46,7 @@ impl HypeManifest {
             description: None,
             main: None,
             dependencies: None,
+            bin: None,
         }
     }
 
@@ -57,6 +65,12 @@ impl HypeManifest {
     /// Set module dependencies.
     pub fn with_dependencies(mut self, deps: Vec<String>) -> Self {
         self.dependencies = Some(deps);
+        self
+    }
+
+    /// Set binary command mappings.
+    pub fn with_bin(mut self, bin: HashMap<String, String>) -> Self {
+        self.bin = Some(bin);
         self
     }
 
@@ -102,6 +116,16 @@ impl HypeManifest {
         self.validate_version()?;
         self.validate_main()?;
         self.validate_dependencies()?;
+
+        Ok(())
+    }
+
+    /// Validate the manifest structure with package directory context.
+    ///
+    /// This version includes bin field validation that requires filesystem access.
+    pub fn validate_with_package_dir(&self, package_dir: &Path) -> Result<(), HypeError> {
+        self.validate()?;
+        self.validate_bin(package_dir)?;
 
         Ok(())
     }
@@ -158,6 +182,108 @@ impl HypeManifest {
                     return Err(HypeError::Execution(
                         ModuleError::InvalidManifest {
                             reason: format!("invalid dependency name: '{}'", dep),
+                        }
+                        .to_string(),
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate bin field entries if present.
+    ///
+    /// Checks:
+    /// - Command names are valid (alphanumeric, hyphens, underscores, 1-64 chars)
+    /// - Script paths are relative (not absolute)
+    /// - Script paths don't contain directory traversal (..)
+    /// - Script files exist in the package directory
+    pub fn validate_bin(&self, package_dir: &Path) -> Result<(), HypeError> {
+        if let Some(bin_map) = &self.bin {
+            let cmd_re = Regex::new(COMMAND_NAME_PATTERN).unwrap();
+
+            for (cmd_name, script_path) in bin_map {
+                if cmd_name.is_empty() {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: "bin command name cannot be empty".to_string(),
+                        }
+                        .to_string(),
+                    ));
+                }
+
+                if !cmd_re.is_match(cmd_name) {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: format!(
+                                "invalid bin command name '{}': must be alphanumeric, hyphens, underscores, 1-64 chars",
+                                cmd_name
+                            ),
+                        }
+                        .to_string(),
+                    ));
+                }
+
+                if script_path.is_empty() {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: format!("bin script path for '{}' cannot be empty", cmd_name),
+                        }
+                        .to_string(),
+                    ));
+                }
+
+                let script_path_obj = Path::new(script_path);
+
+                if script_path_obj.is_absolute() {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: format!(
+                                "bin script path '{}' must be relative, not absolute",
+                                script_path
+                            ),
+                        }
+                        .to_string(),
+                    ));
+                }
+
+                for component in script_path_obj.components() {
+                    if let std::path::Component::ParentDir = component {
+                        return Err(HypeError::Execution(
+                            ModuleError::InvalidManifest {
+                                reason: format!(
+                                    "bin script path '{}' cannot contain '..' (directory traversal)",
+                                    script_path
+                                ),
+                            }
+                            .to_string(),
+                        ));
+                    }
+                }
+
+                let full_path = package_dir.join(script_path);
+                if !full_path.exists() {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: format!(
+                                "bin script '{}' does not exist at path: {}",
+                                script_path,
+                                full_path.display()
+                            ),
+                        }
+                        .to_string(),
+                    ));
+                }
+
+                if !full_path.is_file() {
+                    return Err(HypeError::Execution(
+                        ModuleError::InvalidManifest {
+                            reason: format!(
+                                "bin script '{}' is not a file: {}",
+                                script_path,
+                                full_path.display()
+                            ),
                         }
                         .to_string(),
                     ));
@@ -389,5 +515,243 @@ mod tests {
         assert_eq!(cloned.name, "test");
         assert_eq!(cloned.version, "1.0.0");
         assert_eq!(cloned.description, Some("Test".to_string()));
+    }
+
+    #[test]
+    fn test_manifest_with_bin() {
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin/cli.lua".to_string());
+        bin_map.insert("mytool".to_string(), "scripts/tool.lua".to_string());
+
+        let manifest =
+            HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map.clone());
+
+        assert_eq!(manifest.bin, Some(bin_map));
+    }
+
+    #[test]
+    fn test_deserialize_manifest_with_bin() {
+        let json = r#"{
+            "name": "test-module",
+            "version": "1.0.0",
+            "bin": {
+                "mycli": "bin/cli.lua",
+                "mytool": "scripts/tool.lua"
+            }
+        }"#;
+
+        let manifest: HypeManifest = serde_json::from_str(json).unwrap();
+        assert_eq!(manifest.name, "test-module");
+        assert_eq!(manifest.version, "1.0.0");
+
+        let bin = manifest.bin.unwrap();
+        assert_eq!(bin.get("mycli"), Some(&"bin/cli.lua".to_string()));
+        assert_eq!(bin.get("mytool"), Some(&"scripts/tool.lua".to_string()));
+    }
+
+    #[test]
+    fn test_deserialize_manifest_without_bin() {
+        let json = r#"{
+            "name": "test-module",
+            "version": "1.0.0"
+        }"#;
+
+        let manifest: HypeManifest = serde_json::from_str(json).unwrap();
+        assert_eq!(manifest.name, "test-module");
+        assert!(manifest.bin.is_none());
+    }
+
+    #[test]
+    fn test_save_load_with_bin() {
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test_module".to_string(), "1.0.0".to_string())
+            .with_description("Test description".to_string())
+            .with_bin(bin_map.clone());
+
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.path().to_path_buf();
+
+        manifest.save(&path).unwrap();
+
+        let loaded = HypeManifest::load(&path).unwrap();
+        assert_eq!(loaded.name, "test_module");
+        assert_eq!(loaded.version, "1.0.0");
+        assert_eq!(loaded.bin, Some(bin_map));
+    }
+
+    #[test]
+    fn test_validate_bin_valid() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let bin_dir = temp_dir.path().join("bin");
+        std::fs::create_dir(&bin_dir).unwrap();
+        let script_path = bin_dir.join("cli.lua");
+        std::fs::write(&script_path, "print('hello')").unwrap();
+
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        assert!(manifest.validate_bin(temp_dir.path()).is_ok());
+    }
+
+    #[test]
+    fn test_validate_bin_empty_command_name() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("".to_string(), "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("cannot be empty"));
+    }
+
+    #[test]
+    fn test_validate_bin_invalid_command_name_special_chars() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("my@cli".to_string(), "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("invalid bin command name"));
+    }
+
+    #[test]
+    fn test_validate_bin_invalid_command_name_too_long() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        let long_name = "a".repeat(65);
+        bin_map.insert(long_name, "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("invalid bin command name"));
+    }
+
+    #[test]
+    fn test_validate_bin_valid_command_names() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        std::fs::write(temp_dir.path().join("cli.lua"), "print('hello')").unwrap();
+
+        let mut bin_map = HashMap::new();
+        bin_map.insert("my-cli".to_string(), "cli.lua".to_string());
+        bin_map.insert("my_tool".to_string(), "cli.lua".to_string());
+        bin_map.insert("MyTool123".to_string(), "cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        assert!(manifest.validate_bin(temp_dir.path()).is_ok());
+    }
+
+    #[test]
+    fn test_validate_bin_empty_script_path() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("cannot be empty"));
+    }
+
+    #[test]
+    fn test_validate_bin_absolute_path() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "/usr/bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("must be relative"));
+    }
+
+    #[test]
+    fn test_validate_bin_directory_traversal() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "../bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("directory traversal"));
+    }
+
+    #[test]
+    fn test_validate_bin_nonexistent_script() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin/cli.lua".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("does not exist"));
+    }
+
+    #[test]
+    fn test_validate_bin_directory_not_file() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let bin_dir = temp_dir.path().join("bin");
+        std::fs::create_dir(&bin_dir).unwrap();
+
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin".to_string());
+
+        let manifest = HypeManifest::new("test".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        let result = manifest.validate_bin(temp_dir.path());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("is not a file"));
+    }
+
+    #[test]
+    fn test_validate_with_package_dir() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let bin_dir = temp_dir.path().join("bin");
+        std::fs::create_dir(&bin_dir).unwrap();
+        let script_path = bin_dir.join("cli.lua");
+        std::fs::write(&script_path, "print('hello')").unwrap();
+
+        let mut bin_map = HashMap::new();
+        bin_map.insert("mycli".to_string(), "bin/cli.lua".to_string());
+
+        let manifest =
+            HypeManifest::new("valid_module".to_string(), "1.0.0".to_string()).with_bin(bin_map);
+
+        assert!(manifest.validate_with_package_dir(temp_dir.path()).is_ok());
+    }
+
+    #[test]
+    fn test_validate_with_package_dir_invalid_version() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let manifest = HypeManifest::new("test".to_string(), "invalid".to_string());
+
+        let result = manifest.validate_with_package_dir(temp_dir.path());
+        assert!(result.is_err());
     }
 }
