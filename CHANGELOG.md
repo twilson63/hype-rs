@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Automated release system with GitHub Actions (PRP-008)
+- Cross-platform binary builds for macOS (Intel/ARM) and Linux (x86_64/ARM/musl)
+- One-command installation script for easy setup
+- cargo-dist configuration for streamlined releases
+- Release process documentation
+- GitHub release notes templates
+
 ### BREAKING CHANGES
 
 #### Module Directory Renamed: `node_modules` → `hype_modules`

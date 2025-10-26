@@ -159,6 +159,26 @@ Key files:
 - `docs/testing.md` - Testing guide
 - `docs/performance.md` - Performance information
 
+## Release Process
+
+Maintainers: See [docs/release-process.md](../docs/release-process.md) for detailed release instructions.
+
+### Quick Release Steps
+
+1. Update version in `Cargo.toml`
+2. Update `CHANGELOG.md`
+3. Commit: `git commit -am "chore: bump version to X.Y.Z"`
+4. Tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+5. Push: `git push origin master --tags`
+6. GitHub Actions handles the rest
+
+The automated release system will:
+- Build binaries for all platforms
+- Run full test suite
+- Create GitHub release
+- Upload binary artifacts
+- Generate release notes
+
 ## Questions?
 
 - Check existing documentation in [docs/](../docs/)

@@ -1,5 +1,10 @@
 # Hype-RS: A Lua Runtime Written in Rust
 
+[![Version](https://img.shields.io/github/v/release/twilson63/hype-rs)](https://github.com/twilson63/hype-rs/releases)
+[![Build Status](https://github.com/twilson63/hype-rs/workflows/Release/badge.svg)](https://github.com/twilson63/hype-rs/actions)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](https://github.com/twilson63/hype-rs)
+[![Downloads](https://img.shields.io/github/downloads/twilson63/hype-rs/total)](https://github.com/twilson63/hype-rs/releases)
+
 A fast, lightweight command-line Lua runtime written in Rust that enables you to execute Lua scripts from the terminal. Hype-RS serves as the foundation for a Lua runtime ecosystem, starting with robust script execution capabilities.
 
 ## Features
@@ -28,16 +33,58 @@ A fast, lightweight command-line Lua runtime written in Rust that enables you to
 
 ## Installation
 
-### From Cargo
+### Quick Install (Recommended)
 
+**macOS and Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/twilson63/hype-rs/master/install.sh | sh
+```
+
+After installation, add hype to your PATH:
+```bash
+# Add to ~/.bashrc, ~/.zshrc, or equivalent
+export PATH="$HOME/.hype/bin:$PATH"
+```
+
+Verify installation:
+```bash
+hype --version
+```
+
+### Install Specific Version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/twilson63/hype-rs/master/install.sh | sh -s -- --version v0.2.0
+```
+
+### Alternative Installation Methods
+
+**From Cargo:**
 ```bash
 cargo install hype-rs
 ```
 
-### Build from Source
+**From GitHub Releases:**
 
+Download pre-built binaries from the [releases page](https://github.com/twilson63/hype-rs/releases):
+
+- macOS (Intel): `hype-x86_64-apple-darwin.tar.gz`
+- macOS (Apple Silicon): `hype-aarch64-apple-darwin.tar.gz`
+- Linux (x86_64): `hype-x86_64-unknown-linux-gnu.tar.gz`
+- Linux (musl/Alpine): `hype-x86_64-unknown-linux-musl.tar.gz`
+- Linux (ARM64): `hype-aarch64-unknown-linux-gnu.tar.gz`
+
+Extract and install manually:
 ```bash
-git clone https://github.com/your-org/hype-rs
+tar xzf hype-*.tar.gz
+mkdir -p ~/.hype/bin
+mv hype ~/.hype/bin/
+export PATH="$HOME/.hype/bin:$PATH"
+```
+
+**Build from Source:**
+```bash
+git clone https://github.com/twilson63/hype-rs
 cd hype-rs
 cargo build --release
 ./target/release/hype --version
@@ -515,4 +562,4 @@ You may choose either license for your use of this software.
 
 ---
 
-**Built with ❤️ in Rust** | [GitHub](https://github.com/your-org/hype-rs) | [Documentation](https://docs.hype-rs.dev)
+**Built with ❤️ in Rust** | [GitHub](https://github.com/twilson63/hype-rs) | [Releases](https://github.com/twilson63/hype-rs/releases)
