@@ -10,8 +10,9 @@ use crate::engine::timeout::{TimeoutError, TimeoutManager};
 use crate::error::{HypeError, Result};
 use crate::file_io::read_lua_script;
 use crate::lua::{
-    create_cli_config, create_cli_security_policy, LuaStateConfig, LuaStateManager, SecurityPolicy,
+    create_cli_config, create_cli_security_policy, LuaStateConfig, LuaStateManager, SecurityPolicy, setup_require_fn,
 };
+use crate::modules::loader::ModuleLoader;
 
 #[derive(Debug, Clone)]
 pub struct ExecutionConfig {
@@ -192,6 +193,14 @@ impl ExecutionEngine {
 
         // Create state manager
         let state_manager = LuaStateManager::new(lua_config)?;
+
+        // Set up module system (require function)
+        let lua = state_manager.lua.lock().unwrap();
+        let cwd = std::env::current_dir().map_err(|e| HypeError::Io(e))?;
+        let loader = Arc::new(Mutex::new(ModuleLoader::new(cwd)));
+        setup_require_fn(&lua, loader)
+            .map_err(|e| HypeError::Lua(format!("Failed to setup module system: {}", e)))?;
+        drop(lua);
 
         // Set up output capture
         self.setup_output_capture(&state_manager)?;

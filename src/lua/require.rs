@@ -33,6 +33,15 @@ pub fn setup_require_fn(lua: &Lua, loader: Arc<Mutex<ModuleLoader>>) -> Result<(
                 mlua::Error::RuntimeError("Failed to acquire module loader lock".to_string())
             })?;
 
+            let is_builtin = loader_lock.is_builtin(&module_id);
+            
+            if is_builtin {
+                return loader_lock.load_builtin_with_lua(lua_ctx, &module_id)
+                    .map_err(|err| {
+                        mlua::Error::RuntimeError(format!("Failed to load builtin module '{}': {}", module_id, err))
+                    });
+            }
+
             let exports = loader_lock.require(&module_id).map_err(|err| {
                 mlua::Error::RuntimeError(format!("Failed to load module '{}': {}", module_id, err))
             })?;
@@ -116,7 +125,7 @@ fn create_resolve_fn(
     Ok(())
 }
 
-fn json_to_lua<'a>(lua: &'a Lua, value: &JsonValue) -> Result<Value<'a>> {
+pub fn json_to_lua<'a>(lua: &'a Lua, value: &JsonValue) -> Result<Value<'a>> {
     match value {
         JsonValue::Null => Ok(Value::Nil),
         JsonValue::Bool(b) => Ok(Value::Boolean(*b)),

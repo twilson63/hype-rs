@@ -4,6 +4,10 @@ use std::path::{Path, PathBuf};
 use super::error::ModuleError;
 use crate::error::HypeError;
 
+#[cfg(feature = "http")]
+const BUILTIN_MODULES: &[&str] = &["fs", "path", "events", "util", "table", "http"];
+
+#[cfg(not(feature = "http"))]
 const BUILTIN_MODULES: &[&str] = &["fs", "path", "events", "util", "table"];
 
 /// Module resolver implementing Hype-RS module resolution algorithm.

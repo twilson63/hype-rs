@@ -1,6 +1,6 @@
 # Built-in Modules Reference
 
-Hype-RS provides 5 built-in modules for common operations. These are always available and require no installation.
+Hype-RS provides 6 built-in modules for common operations. These are always available and require no installation.
 
 ## Table of Contents
 
@@ -9,6 +9,7 @@ Hype-RS provides 5 built-in modules for common operations. These are always avai
 - [events Module](#events-module)
 - [util Module](#util-module)
 - [table Module](#table-module)
+- [http Module](#http-module) 🆕
 
 ---
 
@@ -810,7 +811,125 @@ All built-in modules are optimized for performance:
 
 ---
 
-**Last Updated**: October 2025  
-**Built-in Modules**: 5  
+## http Module
 
-See also: [require() API Reference](./require-api.md) | [Getting Started Guide](./getting-started.md)
+> 🆕 **New in v0.1.0** | Requires `http` feature flag
+
+HTTP client for making web requests.
+
+### Overview
+
+The `http` module provides a comprehensive HTTP client for making web requests. It supports all standard HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS) and provides a modern fetch-style API.
+
+### Load
+
+```lua
+local http = require("http")
+```
+
+### Requirements
+
+Compile with the `http` feature flag:
+
+```bash
+cargo build --features http
+```
+
+Or use default features (HTTP included):
+
+```bash
+cargo build
+```
+
+### Quick Start
+
+```lua
+local http = require("http")
+
+-- Simple GET request
+local response = http.get("https://api.github.com/users/torvalds")
+
+if response.ok() then
+    local user = response.json()
+    print("Name:", user.name)
+    print("Location:", user.location)
+end
+```
+
+### Main Functions
+
+#### http.get(url)
+Perform HTTP GET request.
+
+#### http.post(url, options?)
+Perform HTTP POST request with optional body and headers.
+
+#### http.put(url, options?)
+Perform HTTP PUT request.
+
+#### http.delete(url, options?)
+Perform HTTP DELETE request.
+
+#### http.fetch(url, options?)
+Universal fetch API (similar to JavaScript fetch).
+
+#### http.postJson(url, data)
+POST with automatic JSON serialization.
+
+#### http.putJson(url, data)
+PUT with automatic JSON serialization.
+
+### Response Object
+
+All HTTP methods return a Response object:
+
+- `status` (number): HTTP status code
+- `statusText` (string): Status text
+- `headers` (table): Response headers
+- `body` (string): Raw response body
+- `ok()` → boolean: Check if status is 2xx
+- `text()` → string: Get body as string
+- `json()` → table: Parse body as JSON
+
+### Examples
+
+**POST JSON:**
+```lua
+local data = {name = "Alice", age = 30}
+local response = http.postJson("https://api.example.com/users", data)
+print("Created:", response.json().id)
+```
+
+**Custom headers:**
+```lua
+local response = http.fetch("https://api.example.com/protected", {
+    method = "GET",
+    headers = {
+        ["Authorization"] = "Bearer token123",
+        ["Accept"] = "application/json"
+    }
+})
+```
+
+**Timeout:**
+```lua
+local response = http.fetch("https://api.example.com/slow", {
+    timeout = 5000  -- 5 seconds
+})
+```
+
+### Complete Documentation
+
+See [HTTP Module API Reference](./http-api.md) for complete documentation including:
+- All HTTP methods
+- Response handling
+- Error handling
+- Advanced examples
+- Implementation details
+
+---
+
+**Last Updated**: October 2025  
+**Built-in Modules**: 6  
+
+See also: [require() API Reference](./require-api.md) | [Getting Started Guide](./getting-started.md) | [HTTP API Reference](./http-api.md)

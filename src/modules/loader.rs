@@ -2,6 +2,7 @@ use serde_json::{json, Value as JsonValue};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
+use super::builtins::BuiltinRegistry;
 use super::detector::CircularDependencyDetector;
 use super::registry::{ModuleInfo, ModuleRegistry};
 use super::resolver::ModuleResolver;
@@ -38,6 +39,7 @@ pub struct ModuleLoader {
     resolver: ModuleResolver,
     detector: CircularDependencyDetector,
     load_stack: Arc<RwLock<Vec<String>>>,
+    builtins: BuiltinRegistry,
 }
 
 impl ModuleLoader {
@@ -56,6 +58,7 @@ impl ModuleLoader {
             resolver: ModuleResolver::new(root_dir),
             detector: CircularDependencyDetector::new(),
             load_stack: Arc::new(RwLock::new(Vec::new())),
+            builtins: BuiltinRegistry::new(),
         }
     }
 
@@ -214,6 +217,19 @@ impl ModuleLoader {
     /// Get detector reference.
     pub fn detector(&self) -> &CircularDependencyDetector {
         &self.detector
+    }
+    
+    /// Check if a module is a built-in module
+    pub fn is_builtin(&self, module_id: &str) -> bool {
+        self.builtins.is_builtin(module_id)
+    }
+    
+    /// Load a built-in module with Lua bindings
+    ///
+    /// For modules that need callable Lua functions (like HTTP),
+    /// this returns the Lua bindings directly instead of JSON metadata
+    pub fn load_builtin_with_lua<'lua>(&mut self, lua: &'lua mlua::Lua, module_id: &str) -> Result<mlua::Value<'lua>, HypeError> {
+        self.builtins.load_with_lua(lua, module_id)
     }
 
     /// Get all cached module keys.
