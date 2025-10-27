@@ -155,7 +155,7 @@ pub fn build_cli() -> Command {
         .hide(true);
 
     Command::new("hype")
-        .version("0.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Your Name <your.email@example.com>")
         .about("A high-performance Lua scripting engine with CLI interface")
         .long_about(
