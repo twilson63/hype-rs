@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-10-26
+
+### Fixed
+- HTTP module now uses rustls instead of native-tls for better TLS compatibility
+  - Fixes connection failures to servers with limited TLS 1.2 cipher suite support
+  - Improved TLS 1.3 support and cipher suite negotiation
+  - Resolves "handshake failure" errors with certain HTTPS endpoints
+  - All HTTPS connections now work consistently across different server configurations
+
+### Changed
+- Updated reqwest dependency to use `rustls-tls` feature instead of default `native-tls`
+  - Better cross-platform TLS compatibility
+  - More predictable TLS behavior across different operating systems
+
 ## [0.1.2] - 2025-01-26
 
 ### Added
