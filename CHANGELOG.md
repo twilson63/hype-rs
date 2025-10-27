@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - TBD
+
+### Added
+- Filesystem module with 8 core synchronous operations (PRP-013)
+  - `fs.readFileSync(path)` - Read UTF-8 text files
+  - `fs.writeFileSync(path, data)` - Write UTF-8 text files
+  - `fs.existsSync(path)` - Check file/directory existence
+  - `fs.statSync(path)` - Get file metadata (size, type, mtime)
+  - `fs.readdirSync(path)` - List directory contents (sorted)
+  - `fs.unlinkSync(path)` - Delete files
+  - `fs.mkdirSync(path)` - Create directories (recursive by default)
+  - `fs.rmdirSync(path)` - Remove empty directories
+  
+### Technical Details
+- UTF-8 text file support only (binary support planned for Phase 2)
+- Recursive directory creation by default for safety
+- Cross-platform path handling using `std::path`
+- Comprehensive error handling with `FsError` enum
+- Full Lua integration via `require("fs")`
+- 24 unit and integration tests
+
 ## [0.2.0] - 2025-10-28
 
 ### Added
