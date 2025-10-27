@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- JSON module for encoding and decoding JSON data
+  - `json.encode(value, pretty?)` - Encode Lua value to JSON string
+  - `json.decode(jsonString)` - Decode JSON string to Lua value
+  - `json.stringify(value, pretty?)` - Alias for encode
+  - `json.parse(jsonString)` - Alias for decode
+  - Full Unicode support including emojis
+  - Pretty-printing support for readable output
+  - Comprehensive error handling for invalid JSON
+
 ## [0.3.0] - 2025-10-27
 
 ### Added
