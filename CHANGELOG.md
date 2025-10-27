@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-27
+
 ### Added
 - Crypto module for cryptographic operations
   - `crypto.hash(algorithm, data)` - Hash data with SHA256, SHA512, SHA1, or MD5
