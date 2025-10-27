@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-10-27
+
+### Fixed
+- **Critical**: HTTP module now loads correctly via `require("http")`
+  - HTTP module existed but was missing from the Lua loader function
+  - Users can now use all HTTP features: GET, POST, cookies, auth, proxies, forms
+  - All HTTP functions now accessible: `http.get()`, `http.post()`, `http.fetch()`, etc.
+
+### Technical Details
+- Added `http` case to `load_with_lua()` switch statement in builtin module registry
+- Exported `create_http_module()` function from HTTP module
+- HTTP module was already compiled in but unusable - now fully functional
+
 ## [0.4.0] - 2025-10-27
 
 ### Added
