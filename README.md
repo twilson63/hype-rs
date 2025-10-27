@@ -214,6 +214,7 @@ USAGE:
     hype uninstall <NAME>
     hype list
     hype which <COMMAND>
+    hype agent
 
 COMMANDS:
     run         Execute a Lua script (default)
@@ -221,6 +222,7 @@ COMMANDS:
     uninstall   Remove globally installed package
     list        List installed packages
     which       Show which package provides a command
+    agent       Output machine-readable documentation for LLM agents
 
 OPTIONS:
     -v, --verbose    Enable verbose output
@@ -229,6 +231,23 @@ OPTIONS:
     -h, --help       Print help information
     -V, --version    Print version information
 ```
+
+### Agent Documentation
+
+For LLM agents and automated tools, hype provides a special `agent` command that outputs comprehensive, machine-readable documentation in JSON format:
+
+```bash
+hype agent
+```
+
+This outputs a complete API reference including:
+- All built-in modules (fs, http, path, events, util, table) with function signatures, parameters, return types, and examples
+- CLI commands and usage patterns
+- Security constraints and limitations
+- Best practices and common error patterns
+- Working code examples
+
+The output is optimized for LLM consumption (< 50KB, < 200ms execution time) and designed to eliminate hallucination by providing complete, self-contained documentation.
 
 ## Script Arguments
 

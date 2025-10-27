@@ -6,6 +6,7 @@ mod file_io;
 mod lua;
 mod modules;
 
+use cli::agent::generate_agent_docs;
 use cli::commands::{
     handle_install_command, handle_list_command, handle_uninstall_command, handle_which_command,
     run_script,
@@ -32,5 +33,15 @@ fn main() -> Result<(), HypeError> {
         HypeCommand::Uninstall { name, verbose } => handle_uninstall_command(name, verbose),
         HypeCommand::List { json, verbose } => handle_list_command(json, verbose),
         HypeCommand::Which { command } => handle_which_command(command),
+        HypeCommand::Agent => match generate_agent_docs() {
+            Ok(json) => {
+                println!("{}", json);
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("Error generating agent documentation: {}", e);
+                std::process::exit(1);
+            }
+        },
     }
 }

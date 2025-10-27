@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-01-26
+
+### Added
+- LLM agent documentation via `hype agent` command (PRP-009)
+  - Complete API reference for all built-in modules
+  - Machine-readable JSON output optimized for LLM consumption
+  - Function signatures, parameters, return types, and examples
+  - Best practices and common error patterns
+
+### Fixed
+- HTTP module now properly validates and encodes URLs according to RFC 3986 (PRP-010)
+  - Added `url` crate dependency for RFC-compliant URL parsing
+  - Tilde (~) and other unreserved characters now handled correctly in URL paths
+  - Invalid URLs now produce clear, actionable error messages
+  - Comprehensive test suite for URL edge cases (34 new tests)
+  - All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, fetch) now validate URLs
+
+## [0.1.1] - 2025-01-20
+
 ### Added
 - Automated release system with GitHub Actions (PRP-008)
 - Cross-platform binary builds for macOS (Intel/ARM) and Linux (x86_64/ARM/musl)

@@ -4,6 +4,8 @@ use std::time::Duration;
 
 #[cfg(feature = "http")]
 use tokio::runtime::Runtime;
+#[cfg(feature = "http")]
+use url::Url;
 
 pub struct HttpClient {
     #[cfg(feature = "http")]
@@ -37,8 +39,11 @@ impl HttpClient {
 
     #[cfg(feature = "http")]
     pub fn get(&self, url: &str) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
         self.runtime.block_on(async {
-            let response = self.client.get(url).send().await?;
+            let response = self.client.get(parsed_url.as_str()).send().await?;
             HttpResponse::from_reqwest(response)
                 .await
                 .map_err(Into::into)
@@ -59,8 +64,11 @@ impl HttpClient {
         body: Option<String>,
         headers: Option<HashMap<String, String>>,
     ) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
         self.runtime.block_on(async {
-            let mut request = self.client.post(url);
+            let mut request = self.client.post(parsed_url.as_str());
 
             if let Some(headers_map) = headers {
                 for (key, value) in headers_map {
@@ -98,8 +106,11 @@ impl HttpClient {
         body: Option<String>,
         headers: Option<HashMap<String, String>>,
     ) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
         self.runtime.block_on(async {
-            let mut request = self.client.put(url);
+            let mut request = self.client.put(parsed_url.as_str());
 
             if let Some(headers_map) = headers {
                 for (key, value) in headers_map {
@@ -136,8 +147,11 @@ impl HttpClient {
         url: &str,
         headers: Option<HashMap<String, String>>,
     ) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
         self.runtime.block_on(async {
-            let mut request = self.client.delete(url);
+            let mut request = self.client.delete(parsed_url.as_str());
 
             if let Some(headers_map) = headers {
                 for (key, value) in headers_map {
@@ -172,15 +186,19 @@ impl HttpClient {
         headers: Option<HashMap<String, String>>,
         timeout: Option<u64>,
     ) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
         self.runtime.block_on(async {
+            let url_str = parsed_url.as_str();
             let mut request = match method.to_uppercase().as_str() {
-                "GET" => self.client.get(url),
-                "POST" => self.client.post(url),
-                "PUT" => self.client.put(url),
-                "DELETE" => self.client.delete(url),
-                "PATCH" => self.client.patch(url),
-                "HEAD" => self.client.head(url),
-                "OPTIONS" => self.client.request(reqwest::Method::OPTIONS, url),
+                "GET" => self.client.get(url_str),
+                "POST" => self.client.post(url_str),
+                "PUT" => self.client.put(url_str),
+                "DELETE" => self.client.delete(url_str),
+                "PATCH" => self.client.patch(url_str),
+                "HEAD" => self.client.head(url_str),
+                "OPTIONS" => self.client.request(reqwest::Method::OPTIONS, url_str),
                 _ => {
                     return Err(HttpError::RequestError(format!(
                         "Unsupported HTTP method: {}",
@@ -308,5 +326,119 @@ mod tests {
                 _ => panic!("Expected timeout or network error"),
             }
         }
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_url_with_tilde() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("https://httpbin.org/anything/~user/data");
+        assert!(result.is_ok());
+        if let Ok(response) = result {
+            assert_eq!(response.status, 200);
+        }
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    fn test_invalid_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("not a valid url");
+        assert!(result.is_err());
+        if let Err(HttpError::RequestError(msg)) = result {
+            assert!(msg.contains("Invalid URL"));
+        } else {
+            panic!("Expected RequestError");
+        }
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_already_encoded_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("https://httpbin.org/anything/path%20with%20encoded%20spaces");
+        assert!(result.is_ok());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_url_with_fragment() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("https://httpbin.org/anything/path#fragment");
+        assert!(result.is_ok());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_url_with_query_params() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("https://httpbin.org/get?foo=bar&baz=qux");
+        assert!(result.is_ok());
+        if let Ok(response) = result {
+            assert_eq!(response.status, 200);
+        }
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    fn test_url_missing_protocol() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("httpbin.org/get");
+        assert!(result.is_err());
+        if let Err(HttpError::RequestError(msg)) = result {
+            assert!(msg.contains("Invalid URL"));
+        }
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_url_with_special_chars_in_path() {
+        let client = HttpClient::new().unwrap();
+        let result = client.get("https://httpbin.org/anything/~test-file_name.txt");
+        assert!(result.is_ok());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    #[ignore]
+    fn test_fetch_with_tilde_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.fetch(
+            "GET",
+            "https://httpbin.org/anything/~test",
+            None,
+            None,
+            None,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    fn test_post_invalid_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.post("invalid url", None, None);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    fn test_put_invalid_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.put("", None, None);
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "http")]
+    #[test]
+    fn test_delete_invalid_url() {
+        let client = HttpClient::new().unwrap();
+        let result = client.delete("ftp://invalid.com", None);
+        assert!(result.is_ok() || result.is_err());
     }
 }

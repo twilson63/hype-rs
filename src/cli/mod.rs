@@ -1,3 +1,4 @@
+pub mod agent;
 pub mod args;
 pub mod commands;
 pub mod install;

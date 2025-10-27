@@ -34,6 +34,7 @@ pub enum HypeCommand {
     Which {
         command: String,
     },
+    Agent,
 }
 
 pub fn build_cli() -> Command {
@@ -149,6 +150,10 @@ pub fn build_cli() -> Command {
                 .required(true),
         );
 
+    let agent_cmd = Command::new("agent")
+        .about("Output machine-readable documentation for LLM agents")
+        .hide(true);
+
     Command::new("hype")
         .version("0.1.0")
         .author("Your Name <your.email@example.com>")
@@ -163,6 +168,7 @@ pub fn build_cli() -> Command {
         .subcommand(uninstall_cmd)
         .subcommand(list_cmd)
         .subcommand(which_cmd)
+        .subcommand(agent_cmd)
         .arg(
             Arg::new("script")
                 .help("The Lua script file to execute (backward compatibility)")
@@ -240,6 +246,7 @@ pub fn parse_args() -> Result<HypeCommand, String> {
                 .clone();
             Ok(HypeCommand::Which { command })
         }
+        Some(("agent", _)) => Ok(HypeCommand::Agent),
         None => {
             if let Some(_script_path) = matches.get_one::<PathBuf>("script") {
                 let cli_args = parse_run_args_compat(&matches)?;
