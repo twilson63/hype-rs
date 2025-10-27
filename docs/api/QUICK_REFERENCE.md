@@ -238,8 +238,10 @@ os.loadavg() -> table
 os.networkInterfaces() -> table
 
 -- User
-os.username() -> string
 os.userInfo() -> table
+
+-- Constants
+os.EOL -> string   -- "\n" or "\r\n"
 ```
 
 **Quick Examples:**
@@ -261,34 +263,34 @@ local used_percent = ((total - free) / total) * 100
 ## process - Process & Environment
 
 ```lua
--- Arguments
-process.args() -> table
-process.argv -> table
+-- Properties
+process.argv -> table          -- Command-line arguments
+process.env -> table          -- Environment variables (read/write)
+process.pid -> number         -- Process ID
+process.platform -> string    -- OS platform
+process.arch -> string        -- CPU architecture
 
--- Environment
-process.env(key) -> string | nil
-process.getEnv(key, default?) -> string
-process.setEnv(key, value) -> nil
-
--- Working Directory
+-- Functions
 process.cwd() -> string
 process.chdir(path) -> nil
-
--- Exit
+process.getenv(key) -> string | nil
+process.setenv(key, value) -> nil
 process.exit(code?) -> nil
 ```
 
 **Quick Examples:**
 ```lua
 -- Get arguments
-local args = process.args()
+print(process.argv[2])  -- First argument
 
 -- Environment variables
-local home = process.env("HOME")
-local port = process.getEnv("PORT", "3000")
+local home = process.env.HOME
+local port = process.getenv("PORT") or "3000"
+process.setenv("DEBUG", "true")
 
 -- Working directory
 local cwd = process.cwd()
+process.chdir("/tmp")
 ```
 
 ---
@@ -297,42 +299,40 @@ local cwd = process.cwd()
 
 ```lua
 -- Read/Write
-fs.read(path) -> string
-fs.write(path, data) -> nil
-fs.append(path, data) -> nil
+fs.readFileSync(path) -> string
+fs.writeFileSync(path, data) -> nil
 
 -- Info
-fs.exists(path) -> boolean
-fs.isFile(path) -> boolean
-fs.isDir(path) -> boolean
-fs.stat(path) -> table
+fs.existsSync(path) -> boolean
+fs.statSync(path) -> table
 
 -- Directory
-fs.readDir(path) -> table
-fs.mkdir(path) -> nil
-fs.mkdirAll(path) -> nil
+fs.readdirSync(path) -> table
+fs.mkdirSync(path) -> nil
+fs.rmdirSync(path) -> nil
 
 -- Operations
-fs.copy(src, dest) -> nil
-fs.move(src, dest) -> nil
-fs.remove(path) -> nil
-fs.removeAll(path) -> nil
+fs.unlinkSync(path) -> nil
 ```
 
 **Quick Examples:**
 ```lua
 -- Read/write files
-local content = fs.read("file.txt")
-fs.write("output.txt", "data")
+local content = fs.readFileSync("file.txt")
+fs.writeFileSync("output.txt", "data")
 
 -- Check existence
-if fs.exists("config.json") then end
+if fs.existsSync("config.json") then end
 
 -- List directory
-local files = fs.readDir(".")
-for _, file in ipairs(files) do
-    print(file.name, file.size)
+local files = fs.readdirSync(".")
+for _, filename in ipairs(files) do
+    print(filename)
 end
+
+-- File info
+local stat = fs.statSync("file.txt")
+print(stat.size, stat.isFile)
 ```
 
 ---
@@ -340,23 +340,23 @@ end
 ## json - JSON Encoding/Decoding
 
 ```lua
-json.parse(str) -> table
-json.stringify(value, pretty?) -> string
-json.encode(value) -> string
-json.decode(str) -> table
+json.encode(value, pretty?) -> string
+json.decode(str) -> any
+json.stringify(value, pretty?) -> string   -- alias
+json.parse(str) -> any                     -- alias
 ```
 
 **Quick Examples:**
 ```lua
 -- Parse JSON
-local data = json.parse('{"name": "John", "age": 30}')
+local data = json.decode('{"name": "John", "age": 30}')
 print(data.name)  -- "John"
 
 -- Create JSON
-local json_str = json.stringify({foo = "bar", num = 42})
+local json_str = json.encode({foo = "bar", num = 42})
 
 -- Pretty print
-local pretty = json.stringify(data, true)
+local pretty = json.encode(data, true)
 ```
 
 ---
@@ -367,9 +367,10 @@ local pretty = json.stringify(data, true)
 ```lua
 local crypto = require("crypto")
 local http = require("http")
+local json = require("json")
 
 local secret = "api-secret"
-local body = json.stringify(request_data)
+local body = json.encode(request_data)
 local signature = crypto.hmac("sha256", secret, body)
 
 http.post("https://api.example.com/data", {
@@ -385,13 +386,14 @@ http.post("https://api.example.com/data", {
 ```lua
 local fs = require("fs")
 local json = require("json")
+local time = require("time")
 
 -- Load config
-local config = json.parse(fs.read("config.json"))
+local config = json.decode(fs.readFileSync("config.json"))
 
 -- Update and save
 config.updated_at = time.toISO(time.now())
-fs.write("config.json", json.stringify(config, true))
+fs.writeFileSync("config.json", json.encode(config, true))
 ```
 
 ### Secure Password Storage
@@ -416,7 +418,7 @@ local string = require("string")
 local json = require("json")
 
 -- Read CSV
-local csv = fs.read("data.csv")
+local csv = fs.readFileSync("data.csv")
 local lines = string.split(csv, "\n")
 
 -- Process
@@ -430,7 +432,7 @@ for _, line in ipairs(lines) do
 end
 
 -- Save as JSON
-fs.write("data.json", json.stringify(records, true))
+fs.writeFileSync("data.json", json.encode(records, true))
 ```
 
 ---
@@ -439,8 +441,10 @@ fs.write("data.json", json.stringify(records, true))
 
 ```lua
 -- Use pcall for error handling
+local json = require("json")
+
 local ok, result = pcall(function()
-    return json.parse(invalid_json)
+    return json.decode(invalid_json)
 end)
 
 if not ok then
@@ -454,17 +458,17 @@ end
 
 ## Module Reference
 
-| Module | Functions | Documentation |
-|--------|-----------|---------------|
-| crypto | 13 | [crypto.md](crypto.md) |
-| string | 17 | [string.md](string.md) |
-| time | 17 | [time.md](time.md) |
-| url | 9 | [url.md](url.md) |
-| querystring | 4 | [querystring.md](querystring.md) |
-| os | 13 | [os.md](os.md) |
-| process | 8 | [process.md](process.md) |
-| fs | 15+ | [fs.md](fs.md) |
-| json | 4 | [json.md](json.md) |
+| Module | Functions | Documentation | Status |
+|--------|-----------|---------------|--------|
+| crypto | 13 | [crypto.md](crypto.md) | ✅ |
+| string | 17 | [string.md](string.md) | ✅ |
+| time | 17 | [time.md](time.md) | ✅ |
+| url | 9 | [url.md](url.md) | ✅ |
+| querystring | 4 | [querystring.md](querystring.md) | ✅ |
+| os | 13 | [os.md](os.md) | ✅ |
+| process | 9 | [process.md](process.md) | ✅ |
+| fs | 8 | [fs.md](fs.md) | ✅ |
+| json | 4 | [json.md](json.md) | ✅ |
 
 ---
 

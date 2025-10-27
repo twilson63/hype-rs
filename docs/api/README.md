@@ -31,23 +31,23 @@ local obj = json.parse('{"name": "John"}')
 ## Available Modules
 
 ### Core Utilities
-- [**crypto**](crypto.md) - Cryptographic operations (hashing, encryption, random)
-- [**string**](string.md) - Enhanced string manipulation
-- [**time**](time.md) - Date and time operations
-- [**json**](json.md) - JSON encoding/decoding
+- [**crypto**](crypto.md) - Cryptographic operations (hashing, HMAC, bcrypt, random, encoding) ✅ Documented
+- [**string**](string.md) - Enhanced string manipulation (split, trim, case, padding) ✅ Documented
+- [**time**](time.md) - Date and time operations (timestamps, ISO 8601, formatting) ✅ Documented
+- [**json**](json.md) - JSON encoding/decoding with Unicode support ✅ Documented
 
 ### Web & Networking
-- [**http**](http.md) - HTTP client (GET, POST, etc.)
-- [**url**](url.md) - URL parsing and manipulation
-- [**querystring**](querystring.md) - Query string parsing
+- [**http**](http.md) - HTTP client (GET, POST, cookies, auth, proxies)
+- [**url**](url.md) - URL parsing and manipulation (RFC 3986 compliant) ✅ Documented
+- [**querystring**](querystring.md) - Query string parsing and formatting ✅ Documented
 
 ### File System & I/O
-- [**fs**](fs.md) - File system operations
-- [**path**](path.md) - Path manipulation
+- [**fs**](fs.md) - File system operations (read, write, stat, directories) ✅ Documented
+- [**path**](path.md) - Cross-platform path manipulation
 
 ### System
-- [**os**](os.md) - Operating system information
-- [**process**](process.md) - Process and environment utilities
+- [**os**](os.md) - Operating system information (platform, CPU, memory, network) ✅ Documented
+- [**process**](process.md) - Process control and environment variables ✅ Documented
 
 ### Data Structures
 - [**table**](table.md) - Table/array utilities
@@ -117,8 +117,9 @@ cargo run -- docs/api/examples/crypto-examples.lua
 ## Version Information
 
 - **Lua Version**: 5.4
-- **Hype Version**: 0.3.0
-- **Standard Library**: Phase 1 (v0.4.0 target)
+- **Hype Version**: 0.4.0
+- **Standard Library**: Phase 1 Complete ✅
+- **Documented Modules**: 8 of 14 (crypto, string, time, url, querystring, os, process, fs, json)
 
 ## Next Steps
 
