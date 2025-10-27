@@ -1,7 +1,15 @@
+use super::auth::AuthOption;
+use super::forms;
 use super::{HttpError, HttpResponse, Result};
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(feature = "http")]
+use reqwest::cookie::Jar;
+#[cfg(feature = "http")]
+use reqwest::Proxy;
+#[cfg(feature = "http")]
+use std::sync::Arc;
 #[cfg(feature = "http")]
 use tokio::runtime::Runtime;
 #[cfg(feature = "http")]
@@ -12,21 +20,30 @@ pub struct HttpClient {
     client: reqwest::Client,
     #[cfg(feature = "http")]
     runtime: Runtime,
+    #[cfg(feature = "http")]
+    cookie_jar: Arc<Jar>,
 }
 
 impl HttpClient {
     pub fn new() -> Result<Self> {
         #[cfg(feature = "http")]
         {
+            let cookie_jar = Arc::new(Jar::default());
+
             let client = reqwest::Client::builder()
                 .timeout(Duration::from_secs(30))
                 .pool_max_idle_per_host(10)
+                .cookie_provider(cookie_jar.clone())
                 .build()
                 .map_err(|e| HttpError::RuntimeError(e.to_string()))?;
 
             let runtime = Runtime::new().map_err(|e| HttpError::RuntimeError(e.to_string()))?;
 
-            Ok(Self { client, runtime })
+            Ok(Self {
+                client,
+                runtime,
+                cookie_jar,
+            })
         }
 
         #[cfg(not(feature = "http"))]
@@ -35,6 +52,37 @@ impl HttpClient {
                 "HTTP feature not enabled. Compile with --features http".to_string(),
             ))
         }
+    }
+
+    #[cfg(feature = "http")]
+    pub fn new_with_proxy(proxy_url: &str) -> Result<Self> {
+        let cookie_jar = Arc::new(Jar::default());
+
+        let proxy = Proxy::all(proxy_url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid proxy: {}", e)))?;
+
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .pool_max_idle_per_host(10)
+            .cookie_provider(cookie_jar.clone())
+            .proxy(proxy)
+            .build()
+            .map_err(|e| HttpError::RuntimeError(e.to_string()))?;
+
+        let runtime = Runtime::new().map_err(|e| HttpError::RuntimeError(e.to_string()))?;
+
+        Ok(Self {
+            client,
+            runtime,
+            cookie_jar,
+        })
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn new_with_proxy(_proxy_url: &str) -> Result<Self> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
     }
 
     #[cfg(feature = "http")]
@@ -236,6 +284,160 @@ impl HttpClient {
         _body: Option<String>,
         _headers: Option<HashMap<String, String>>,
         _timeout: Option<u64>,
+    ) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
+    }
+
+    #[cfg(feature = "http")]
+    pub fn get_cookies(&self, url: &str) -> Result<Vec<(String, String)>> {
+        use reqwest::cookie::CookieStore;
+
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
+        let cookies = if let Some(header) = self.cookie_jar.cookies(&parsed_url) {
+            if let Ok(header_str) = header.to_str() {
+                header_str
+                    .split("; ")
+                    .filter_map(|cookie| {
+                        let mut parts = cookie.splitn(2, '=');
+                        Some((parts.next()?.to_string(), parts.next()?.to_string()))
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+
+        Ok(cookies)
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn get_cookies(&self, _url: &str) -> Result<Vec<(String, String)>> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
+    }
+
+    #[cfg(feature = "http")]
+    pub fn get_with_options(
+        &self,
+        url: &str,
+        proxy: Option<String>,
+        auth: Option<AuthOption>,
+    ) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
+        if let Some(proxy_url) = proxy {
+            let temp_client = Self::new_with_proxy(&proxy_url)?;
+            if let Some(auth_opt) = auth {
+                return temp_client.get_with_auth(url, auth_opt);
+            }
+            return temp_client.get(url);
+        }
+
+        if let Some(auth_opt) = auth {
+            return self.get_with_auth(url, auth_opt);
+        }
+
+        self.get(url)
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn get_with_options(
+        &self,
+        _url: &str,
+        _proxy: Option<String>,
+        _auth: Option<AuthOption>,
+    ) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
+    }
+
+    #[cfg(feature = "http")]
+    pub fn get_with_auth(&self, url: &str, auth: AuthOption) -> Result<HttpResponse> {
+        let parsed_url = Url::parse(url)
+            .map_err(|e| HttpError::RequestError(format!("Invalid URL '{}': {}", url, e)))?;
+
+        self.runtime.block_on(async {
+            let response = self
+                .client
+                .get(parsed_url.as_str())
+                .header("Authorization", auth.to_header_value())
+                .send()
+                .await?;
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
+        })
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn get_with_auth(&self, _url: &str, _auth: AuthOption) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
+    }
+
+    #[cfg(feature = "http")]
+    pub fn post_form(&self, url: &str, fields: HashMap<String, String>) -> Result<HttpResponse> {
+        let body = forms::encode_form_urlencoded(fields).map_err(|e| HttpError::RequestError(e))?;
+
+        let mut headers = HashMap::new();
+        headers.insert(
+            "Content-Type".to_string(),
+            "application/x-www-form-urlencoded".to_string(),
+        );
+
+        self.post(url, Some(body), Some(headers))
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn post_form(&self, _url: &str, _fields: HashMap<String, String>) -> Result<HttpResponse> {
+        Err(HttpError::RuntimeError(
+            "HTTP feature not enabled".to_string(),
+        ))
+    }
+
+    #[cfg(feature = "http")]
+    pub fn upload_file(
+        &self,
+        url: &str,
+        fields: HashMap<String, String>,
+        file: forms::FileField,
+    ) -> Result<HttpResponse> {
+        let parsed_url =
+            Url::parse(url).map_err(|e| HttpError::RequestError(format!("Invalid URL: {}", e)))?;
+
+        let form =
+            forms::build_multipart_form(fields, file).map_err(|e| HttpError::RequestError(e))?;
+
+        self.runtime.block_on(async {
+            let response = self
+                .client
+                .post(parsed_url.as_str())
+                .multipart(form)
+                .send()
+                .await?;
+
+            HttpResponse::from_reqwest(response)
+                .await
+                .map_err(Into::into)
+        })
+    }
+
+    #[cfg(not(feature = "http"))]
+    pub fn upload_file(
+        &self,
+        _url: &str,
+        _fields: HashMap<String, String>,
+        _file: forms::FileField,
     ) -> Result<HttpResponse> {
         Err(HttpError::RuntimeError(
             "HTTP feature not enabled".to_string(),

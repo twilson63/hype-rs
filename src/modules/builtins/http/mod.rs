@@ -3,15 +3,19 @@ use serde_json::{json, Value as JsonValue};
 use super::BuiltinModule;
 use crate::error::HypeError;
 
+pub mod auth;
 pub mod client;
 pub mod error;
+pub mod forms;
 pub mod response;
 
 #[cfg(feature = "http")]
 pub mod lua_bindings;
 
+pub use auth::AuthOption;
 pub use client::HttpClient;
 pub use error::HttpError;
+pub use forms::FileField;
 pub use response::HttpResponse;
 
 pub type Result<T> = std::result::Result<T, HttpError>;

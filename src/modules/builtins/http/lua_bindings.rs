@@ -3,7 +3,7 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::{HttpClient, HttpResponse};
+use super::{AuthOption, FileField, HttpClient, HttpResponse};
 
 #[cfg(feature = "http")]
 pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
@@ -19,7 +19,10 @@ pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
     register_head(lua, &http_table, client.clone())?;
     register_fetch(lua, &http_table, client.clone())?;
     register_post_json(lua, &http_table, client.clone())?;
-    register_put_json(lua, &http_table, client)?;
+    register_put_json(lua, &http_table, client.clone())?;
+    register_post_form(lua, &http_table, client.clone())?;
+    register_upload_file(lua, &http_table, client.clone())?;
+    register_get_cookies(lua, &http_table, client)?;
 
     Ok(http_table)
 }
@@ -50,9 +53,19 @@ pub fn create_http_module(lua: &Lua) -> mlua::Result<Table> {
 
 #[cfg(feature = "http")]
 fn register_get(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
-    let get_fn = lua.create_function(move |lua, url: String| {
-        let response = client.get(&url).map_err(|e| mlua::Error::external(e))?;
-        create_response_table(lua, response)
+    let get_fn = lua.create_function(move |lua, (url, options): (String, Option<Table>)| {
+        if let Some(opts) = options {
+            let proxy = opts.get::<_, Option<String>>("proxy").ok().flatten();
+            let auth = parse_auth_options(&opts)?;
+
+            let response = client
+                .get_with_options(&url, proxy, auth)
+                .map_err(|e| mlua::Error::external(e))?;
+            create_response_table(lua, response)
+        } else {
+            let response = client.get(&url).map_err(|e| mlua::Error::external(e))?;
+            create_response_table(lua, response)
+        }
     })?;
     table.set("get", get_fn)?;
     Ok(())
@@ -176,6 +189,90 @@ fn register_put_json(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua:
     Ok(())
 }
 
+#[cfg(feature = "http")]
+fn register_post_form(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
+    let post_form_fn = lua.create_function(move |lua, (url, fields): (String, Table)| {
+        let mut field_map = HashMap::new();
+        for pair in fields.pairs::<String, String>() {
+            let (key, value) = pair?;
+            field_map.insert(key, value);
+        }
+
+        let response = client
+            .post_form(&url, field_map)
+            .map_err(|e| mlua::Error::external(e))?;
+        create_response_table(lua, response)
+    })?;
+    table.set("postForm", post_form_fn)?;
+    Ok(())
+}
+
+#[cfg(feature = "http")]
+fn register_upload_file(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
+    let upload_fn = lua.create_function(move |lua, (url, options): (String, Table)| {
+        let file_table: Table = options.get("file")?;
+        let filename: String = file_table.get("filename")?;
+        let content: String = file_table.get("content")?;
+        let content_type: String = file_table
+            .get("contentType")
+            .unwrap_or_else(|_| "application/octet-stream".to_string());
+
+        let file = FileField {
+            field_name: "file".to_string(),
+            filename,
+            content: content.into_bytes(),
+            content_type,
+        };
+
+        let mut fields = HashMap::new();
+        for pair in options.pairs::<String, Value>() {
+            let (key, value) = pair?;
+            if key == "file" {
+                continue;
+            }
+            if let Value::String(s) = value {
+                fields.insert(key, s.to_str()?.to_string());
+            }
+        }
+
+        let response = client
+            .upload_file(&url, fields, file)
+            .map_err(|e| mlua::Error::external(e))?;
+        create_response_table(lua, response)
+    })?;
+    table.set("uploadFile", upload_fn)?;
+    Ok(())
+}
+
+#[cfg(feature = "http")]
+fn register_get_cookies(lua: &Lua, table: &Table, client: Arc<HttpClient>) -> mlua::Result<()> {
+    let get_cookies_fn = lua.create_function(move |lua, url: String| {
+        let cookies = client
+            .get_cookies(&url)
+            .map_err(|e| mlua::Error::external(e))?;
+
+        let result = lua.create_table()?;
+        for (name, value) in cookies {
+            result.set(name, value)?;
+        }
+        Ok(result)
+    })?;
+    table.set("getCookies", get_cookies_fn)?;
+    Ok(())
+}
+
+#[cfg(not(feature = "http"))]
+fn register_get_cookies(lua: &Lua, table: &Table, _client: Arc<HttpClient>) -> mlua::Result<()> {
+    let error_fn = lua.create_function(|_, _: String| {
+        Err(mlua::Error::external(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "HTTP feature not enabled",
+        )))
+    })?;
+    table.set("getCookies", error_fn)?;
+    Ok(())
+}
+
 fn create_response_table<'lua>(
     lua: &'lua Lua,
     response: HttpResponse,
@@ -282,6 +379,21 @@ fn parse_headers(opts: &Table) -> mlua::Result<Option<HashMap<String, String>>> 
     } else {
         Ok(Some(headers))
     }
+}
+
+#[cfg(feature = "http")]
+fn parse_auth_options(opts: &Table) -> mlua::Result<Option<AuthOption>> {
+    if let Ok(auth_table) = opts.get::<_, Table>("auth") {
+        let username: String = auth_table.get("username")?;
+        let password: String = auth_table.get("password")?;
+        return Ok(Some(AuthOption::Basic { username, password }));
+    }
+
+    if let Ok(token) = opts.get::<_, String>("authToken") {
+        return Ok(Some(AuthOption::Bearer(token)));
+    }
+
+    Ok(None)
 }
 
 fn json_to_lua_value<'lua>(lua: &'lua Lua, value: &JsonValue) -> mlua::Result<Value<'lua>> {

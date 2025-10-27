@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-28
+
+### Added
+- HTTP module now supports proxy configuration (PRP-012)
+  - HTTP and HTTPS proxy via `{proxy = "http://proxy:8080"}`
+  - Works with all HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, fetch)
+  - Simple string URL format for ease of use
+  - Per-request proxy override capability
+  
+- Form data helpers for easier form submission (PRP-012)
+  - `http.postForm(url, fields)` for URL-encoded forms
+  - `http.uploadFile(url, options)` for file uploads with multipart/form-data
+  - Automatic Content-Type header setting
+  - Automatic encoding and boundary management
+  - Support for additional metadata fields in file uploads
+  
+- Authentication helpers (PRP-012)
+  - Basic Auth: `{auth = {username = "u", password = "p"}}`
+  - Bearer Token: `{authToken = "token"}`
+  - Automatic Base64 encoding for Basic Auth (RFC 7617 compliant)
+  - Automatic Authorization header construction
+  - Works with all HTTP methods
+
+### Changed
+- All HTTP methods now accept optional options table for proxy and auth
+- Added `base64` and `serde_urlencoded` dependencies
+- Enabled `multipart` feature in reqwest dependency
+- Bumped version from 0.1.4 to 0.2.0
+
+### Technical Details
+- Base64 encoding using standard `base64` crate (RFC 4648 compliant)
+- Form encoding using `serde_urlencoded` (RFC 1738 compliant)
+- Multipart forms using reqwest's built-in multipart support (RFC 7578 compliant)
+- Full backward compatibility maintained - all existing code continues to work
+- New modules: `auth.rs`, `forms.rs` for better code organization
+
+## [0.1.4] - 2025-10-27
+
+### Added
+- HTTP module now includes automatic cookie management (PRP-011)
+  - Cookies from `Set-Cookie` headers are automatically stored in a cookie jar
+  - Stored cookies are automatically sent with subsequent requests to the same domain
+  - RFC 6265 compliant cookie handling (domain, path, expiry, secure flags, HttpOnly, SameSite)
+  - New `http.getCookies(url)` function to inspect cookies for a given domain
+  - Cookies are properly scoped by domain and path (no cookie leakage)
+  - Secure cookies only sent over HTTPS connections
+  - Automatic handling of session cookies and expiration
+  - Cookies persist across redirects
+  - Works seamlessly with all HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, fetch)
+
+### Changed
+- Updated reqwest dependency to include `cookies` feature flag
+- HttpClient now includes Arc<Jar> cookie jar by default
+- All HTTP requests automatically participate in cookie management
+
+### Technical Details
+- Built on reqwest's battle-tested cookie store implementation
+- Zero breaking changes - cookies work automatically for existing code
+- Minimal performance overhead (< 1ms per request)
+- Full backward compatibility maintained
+
 ## [0.1.3] - 2025-10-26
 
 ### Fixed
