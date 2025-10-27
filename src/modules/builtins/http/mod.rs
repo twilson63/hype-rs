@@ -18,6 +18,9 @@ pub use error::HttpError;
 pub use forms::FileField;
 pub use response::HttpResponse;
 
+#[cfg(feature = "http")]
+pub use lua_bindings::create_http_module;
+
 pub type Result<T> = std::result::Result<T, HttpError>;
 
 pub struct HttpModule;

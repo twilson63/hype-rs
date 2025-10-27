@@ -231,6 +231,9 @@ impl BuiltinRegistry {
                 .map_err(|e| {
                     HypeError::Execution(format!("Failed to create crypto module: {}", e))
                 }),
+            "http" => http::create_http_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create http module: {}", e))),
             _ => {
                 let json_exports = self.load(name)?;
                 crate::lua::require::json_to_lua(lua, &json_exports).map_err(|e| {
