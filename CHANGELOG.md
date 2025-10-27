@@ -8,6 +8,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Crypto module for cryptographic operations
+  - `crypto.hash(algorithm, data)` - Hash data with SHA256, SHA512, SHA1, or MD5
+  - `crypto.hashFile(algorithm, path)` - Hash file contents
+  - `crypto.hmac(algorithm, key, data)` - HMAC signing with SHA256, SHA512, or SHA1
+  - `crypto.randomBytes(size)` - Generate cryptographically secure random bytes
+  - `crypto.randomInt(min, max)` - Generate secure random integer in range
+  - `crypto.randomUUID()` - Generate UUID v4
+  - `crypto.base64Encode(data)` - Base64 encode string
+  - `crypto.base64Decode(data)` - Base64 decode string
+  - `crypto.hexEncode(data)` - Hex encode string
+  - `crypto.hexDecode(data)` - Hex decode string
+  - `crypto.bcrypt(password, cost?)` - Hash password with bcrypt (cost 4-31, default 12)
+  - `crypto.bcryptVerify(password, hash)` - Verify password against bcrypt hash
+  - `crypto.timingSafeEqual(a, b)` - Constant-time string comparison
+  - Full cryptographic hashing support (SHA256, SHA512, SHA1, MD5)
+  - Secure random generation using OS entropy
+  - Password hashing with bcrypt work factor control
+  - HMAC message authentication
+  - Encoding/decoding utilities (Base64, Hex)
+  - Timing-safe comparison to prevent timing attacks
+
+- QueryString module for query string parsing and formatting
+  - `querystring.parse(queryString)` - Parse query string into table of key-value pairs
+  - `querystring.stringify(params)` - Convert table of key-value pairs into query string
+  - `querystring.escape(string)` - URL-encode string for query strings (form-urlencoded)
+  - `querystring.unescape(string)` - Decode URL-encoded query string component
+  - Automatic handling of plus signs (+) as spaces
+  - Full percent-encoding support
+  - Compliant with application/x-www-form-urlencoded format
+  - Roundtrip encoding/decoding with special characters
+
+- URL module for URL parsing and manipulation
+  - `url.parse(urlString)` - Parse URL into components (protocol, host, port, path, query, hash, auth)
+  - `url.format(components)` - Build URL from components object
+  - `url.resolve(base, relative)` - Resolve relative URL against base URL
+  - `url.encode(string)` - URL encode string (form-urlencoded)
+  - `url.decode(string)` - URL decode string
+  - `url.encodeComponent(string)` - Encode URL component (percent-encoding)
+  - `url.decodeComponent(string)` - Decode URL component
+  - `url.parseQuery(queryString)` - Parse query string to table
+  - `url.formatQuery(params)` - Format table as query string
+  - Full RFC 3986 URL parsing support
+  - Query string parsing and building
+  - Relative URL resolution
+  - Percent-encoding and form-urlencoded support
+
+- Time module for date and time operations
+  - `time.now()` - Get current timestamp in milliseconds
+  - `time.nowSeconds()` - Get current timestamp in seconds
+  - `time.nowNanos()` - Get current timestamp in nanoseconds
+  - `time.format(timestamp, format)` - Format timestamp using custom format string
+  - `time.parse(dateString, format)` - Parse date string using custom format
+  - `time.toISO(timestamp)` - Convert timestamp to ISO 8601 string
+  - `time.fromISO(isoString)` - Parse ISO 8601 string to timestamp
+  - `time.date(timestamp?)` - Get date components as table (year, month, day, hour, minute, second, weekday)
+  - `time.year(timestamp?)` - Get year from timestamp
+  - `time.month(timestamp?)` - Get month (1-12) from timestamp
+  - `time.day(timestamp?)` - Get day (1-31) from timestamp
+  - `time.hour(timestamp?)` - Get hour (0-23) from timestamp
+  - `time.minute(timestamp?)` - Get minute (0-59) from timestamp
+  - `time.second(timestamp?)` - Get second (0-59) from timestamp
+  - `time.sleep(ms)` - Sleep for specified milliseconds
+  - `time.elapsed(start)` - Calculate elapsed time since start timestamp
+  - `time.duration(ms)` - Format duration in human-readable form
+  - ISO 8601 and custom format support via chrono
+  - Timestamp arithmetic and date component extraction
+  - Human-readable duration formatting (e.g., "1d 2h 30m")
+
+- String module for enhanced string manipulation utilities
+  - `string.split(str, delimiter)` - Split string into array by delimiter
+  - `string.trim(str)` - Remove whitespace from both ends
+  - `string.trimStart(str)` - Remove leading whitespace
+  - `string.trimEnd(str)` - Remove trailing whitespace
+  - `string.startsWith(str, prefix)` - Check if string starts with prefix
+  - `string.endsWith(str, suffix)` - Check if string ends with suffix
+  - `string.contains(str, substring)` - Check if string contains substring
+  - `string.padStart(str, length, fill?)` - Pad start of string to length
+  - `string.padEnd(str, length, fill?)` - Pad end of string to length
+  - `string.repeat(str, count)` - Repeat string count times
+  - `string.replace(str, pattern, replacement, count?)` - Replace occurrences of pattern
+  - `string.replaceAll(str, pattern, replacement)` - Replace all occurrences of pattern
+  - `string.toUpperCase(str)` - Convert to uppercase
+  - `string.toLowerCase(str)` - Convert to lowercase
+  - `string.capitalize(str)` - Capitalize first letter
+  - `string.lines(str)` - Split string into lines
+  - `string.chars(str)` - Split string into characters
+  - Full UTF-8 Unicode support
+  - Zero dependencies (pure Rust implementation)
+
+- OS module for operating system information and utilities
+  - `os.platform()` - Get operating system platform ("linux", "macos", "windows", "freebsd", "openbsd")
+  - `os.arch()` - Get CPU architecture ("x86_64", "aarch64", "arm", "x86")
+  - `os.hostname()` - Get system hostname
+  - `os.homedir()` - Get user home directory path
+  - `os.tmpdir()` - Get system temp directory path
+  - `os.cpus()` - Get CPU information (model, speed)
+  - `os.totalmem()` - Get total system memory in bytes
+  - `os.freemem()` - Get free system memory in bytes
+  - `os.uptime()` - Get system uptime in seconds
+  - `os.loadavg()` - Get load average [1, 5, 15 minutes] (Unix-like systems)
+  - `os.networkInterfaces()` - Get network interfaces information
+  - `os.userInfo()` - Get current user information (username, uid, gid, shell, homedir)
+  - `os.EOL` - End of line marker for the platform ("\n" or "\r\n")
+  - Cross-platform support for all major operating systems
+  - Full Unix/Windows compatibility with platform-specific features
+
 - Process module for process and environment management
   - `process.cwd()` - Get current working directory
   - `process.chdir(path)` - Change working directory

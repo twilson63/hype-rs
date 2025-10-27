@@ -26,6 +26,16 @@ tempfile = "3.8"
 chrono = "0.4"
 base64 = "0.21"
 serde_urlencoded = "0.7"
+sysinfo = "0.30"
+percent-encoding = "2.3"
+sha2 = "0.10"
+sha1 = "0.10"
+md-5 = "0.10"
+hmac = "0.12"
+rand = "0.8"
+bcrypt = "0.15"
+hex = "0.4"
+uuid = { version = "1.6", features = ["v4"] }
 
 [features]
 default = ["http"]

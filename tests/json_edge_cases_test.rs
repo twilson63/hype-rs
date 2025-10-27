@@ -472,8 +472,14 @@ fn test_encode_decode_preserves_types() {
                type(decoded.bool_f) == "boolean",
                type(decoded.arr) == "table"
     "#;
-    let (str_ok, num_ok, flt_ok, bool_t_ok, bool_f_ok, arr_ok): (bool, bool, bool, bool, bool, bool) =
-        lua.load(code).eval().unwrap();
+    let (str_ok, num_ok, flt_ok, bool_t_ok, bool_f_ok, arr_ok): (
+        bool,
+        bool,
+        bool,
+        bool,
+        bool,
+        bool,
+    ) = lua.load(code).eval().unwrap();
     assert!(str_ok && num_ok && flt_ok && bool_t_ok && bool_f_ok && arr_ok);
 }
 

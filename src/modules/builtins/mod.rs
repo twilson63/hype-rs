@@ -3,14 +3,20 @@ use std::collections::HashMap;
 
 use crate::error::HypeError;
 
+pub mod crypto;
 pub mod events;
 pub mod fs;
 #[cfg(feature = "http")]
 pub mod http;
 pub mod json;
+pub mod os;
 pub mod path;
 pub mod process;
+pub mod querystring;
+pub mod string;
 pub mod table;
+pub mod time;
+pub mod url;
 pub mod util;
 
 /// Trait for built-in modules.
@@ -65,6 +71,12 @@ impl BuiltinRegistry {
             "table" => table::TableModule::new().exports()?,
             "json" => json::JsonModule::new().exports()?,
             "process" => process::ProcessModule::new().exports()?,
+            "os" => os::OsModule::new().exports()?,
+            "string" => string::StringModule::new().exports()?,
+            "time" => time::TimeModule::new().exports()?,
+            "url" => url::UrlModule::new().exports()?,
+            "querystring" => querystring::QueryStringModule::new().exports()?,
+            "crypto" => crypto::CryptoModule::new().exports()?,
             #[cfg(feature = "http")]
             "http" => http::HttpModule::new().exports()?,
             _ => {
@@ -85,14 +97,37 @@ impl BuiltinRegistry {
         {
             matches!(
                 name,
-                "fs" | "path" | "events" | "util" | "table" | "json" | "process" | "http"
+                "fs" | "path"
+                    | "events"
+                    | "util"
+                    | "table"
+                    | "json"
+                    | "process"
+                    | "os"
+                    | "string"
+                    | "time"
+                    | "url"
+                    | "querystring"
+                    | "crypto"
+                    | "http"
             )
         }
         #[cfg(not(feature = "http"))]
         {
             matches!(
                 name,
-                "fs" | "path" | "events" | "util" | "table" | "json" | "process"
+                "fs" | "path"
+                    | "events"
+                    | "util"
+                    | "table"
+                    | "json"
+                    | "process"
+                    | "os"
+                    | "string"
+                    | "time"
+                    | "url"
+                    | "querystring"
+                    | "crypto"
             )
         }
     }
@@ -102,12 +137,39 @@ impl BuiltinRegistry {
         #[cfg(feature = "http")]
         {
             vec![
-                "fs", "path", "events", "util", "table", "json", "process", "http",
+                "fs",
+                "path",
+                "events",
+                "util",
+                "table",
+                "json",
+                "process",
+                "os",
+                "string",
+                "time",
+                "url",
+                "querystring",
+                "crypto",
+                "http",
             ]
         }
         #[cfg(not(feature = "http"))]
         {
-            vec!["fs", "path", "events", "util", "table", "json", "process"]
+            vec![
+                "fs",
+                "path",
+                "events",
+                "util",
+                "table",
+                "json",
+                "process",
+                "os",
+                "string",
+                "time",
+                "url",
+                "querystring",
+                "crypto",
+            ]
         }
     }
 
@@ -145,9 +207,30 @@ impl BuiltinRegistry {
                 .map_err(|e| {
                     HypeError::Execution(format!("Failed to create process module: {}", e))
                 }),
-            "http" => http::lua_bindings::create_http_module(lua)
+            "os" => os::create_os_module(lua)
                 .map(mlua::Value::Table)
-                .map_err(|e| HypeError::Execution(format!("Failed to create HTTP module: {}", e))),
+                .map_err(|e| HypeError::Execution(format!("Failed to create os module: {}", e))),
+            "string" => string::create_string_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create string module: {}", e))
+                }),
+            "time" => time::create_time_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create time module: {}", e))),
+            "url" => url::create_url_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create url module: {}", e))),
+            "querystring" => querystring::create_querystring_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create querystring module: {}", e))
+                }),
+            "crypto" => crypto::create_crypto_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create crypto module: {}", e))
+                }),
             _ => {
                 let json_exports = self.load(name)?;
                 crate::lua::require::json_to_lua(lua, &json_exports).map_err(|e| {
@@ -174,6 +257,30 @@ impl BuiltinRegistry {
                 .map(mlua::Value::Table)
                 .map_err(|e| {
                     HypeError::Execution(format!("Failed to create process module: {}", e))
+                }),
+            "os" => os::create_os_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create os module: {}", e))),
+            "string" => string::create_string_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create string module: {}", e))
+                }),
+            "time" => time::create_time_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create time module: {}", e))),
+            "url" => url::create_url_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| HypeError::Execution(format!("Failed to create url module: {}", e))),
+            "querystring" => querystring::create_querystring_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create querystring module: {}", e))
+                }),
+            "crypto" => crypto::create_crypto_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create crypto module: {}", e))
                 }),
             _ => {
                 let json_exports = self.load(name)?;
@@ -219,9 +326,9 @@ mod tests {
         let registry = BuiltinRegistry::new();
         let list = registry.list();
         #[cfg(feature = "http")]
-        assert_eq!(list.len(), 8);
+        assert_eq!(list.len(), 14);
         #[cfg(not(feature = "http"))]
-        assert_eq!(list.len(), 7);
+        assert_eq!(list.len(), 13);
         assert!(list.contains(&"fs"));
         assert!(list.contains(&"path"));
         assert!(list.contains(&"events"));
@@ -229,6 +336,12 @@ mod tests {
         assert!(list.contains(&"table"));
         assert!(list.contains(&"json"));
         assert!(list.contains(&"process"));
+        assert!(list.contains(&"os"));
+        assert!(list.contains(&"string"));
+        assert!(list.contains(&"time"));
+        assert!(list.contains(&"url"));
+        assert!(list.contains(&"querystring"));
+        assert!(list.contains(&"crypto"));
         #[cfg(feature = "http")]
         assert!(list.contains(&"http"));
     }
