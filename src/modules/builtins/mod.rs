@@ -219,14 +219,16 @@ mod tests {
         let registry = BuiltinRegistry::new();
         let list = registry.list();
         #[cfg(feature = "http")]
-        assert_eq!(list.len(), 6);
+        assert_eq!(list.len(), 8);
         #[cfg(not(feature = "http"))]
-        assert_eq!(list.len(), 5);
+        assert_eq!(list.len(), 7);
         assert!(list.contains(&"fs"));
         assert!(list.contains(&"path"));
         assert!(list.contains(&"events"));
         assert!(list.contains(&"util"));
         assert!(list.contains(&"table"));
+        assert!(list.contains(&"json"));
+        assert!(list.contains(&"process"));
         #[cfg(feature = "http")]
         assert!(list.contains(&"http"));
     }
