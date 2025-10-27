@@ -33,7 +33,22 @@ A fast, lightweight command-line Lua runtime written in Rust that enables you to
 
 ## Installation
 
-### Quick Install (Recommended)
+### Homebrew (macOS and Linux)
+
+**Recommended for macOS and Linux users:**
+
+```bash
+brew install twilson63/hype/hype
+```
+
+Verify installation:
+```bash
+hype --version
+```
+
+> **Note**: Due to a naming conflict with another package, you must use the full tap path `twilson63/hype/hype`.
+
+### Quick Install Script
 
 **macOS and Linux:**
 ```bash
@@ -54,7 +69,7 @@ hype --version
 ### Install Specific Version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/twilson63/hype-rs/master/install.sh | sh -s -- --version v0.2.0
+curl -fsSL https://raw.githubusercontent.com/twilson63/hype-rs/master/install.sh | sh -s -- --version v0.4.0
 ```
 
 ### Alternative Installation Methods
