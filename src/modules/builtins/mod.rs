@@ -9,6 +9,7 @@ pub mod fs;
 pub mod http;
 pub mod json;
 pub mod path;
+pub mod process;
 pub mod table;
 pub mod util;
 
@@ -63,6 +64,7 @@ impl BuiltinRegistry {
             "util" => util::UtilModule::new().exports()?,
             "table" => table::TableModule::new().exports()?,
             "json" => json::JsonModule::new().exports()?,
+            "process" => process::ProcessModule::new().exports()?,
             #[cfg(feature = "http")]
             "http" => http::HttpModule::new().exports()?,
             _ => {
@@ -83,12 +85,15 @@ impl BuiltinRegistry {
         {
             matches!(
                 name,
-                "fs" | "path" | "events" | "util" | "table" | "json" | "http"
+                "fs" | "path" | "events" | "util" | "table" | "json" | "process" | "http"
             )
         }
         #[cfg(not(feature = "http"))]
         {
-            matches!(name, "fs" | "path" | "events" | "util" | "table" | "json")
+            matches!(
+                name,
+                "fs" | "path" | "events" | "util" | "table" | "json" | "process"
+            )
         }
     }
 
@@ -96,11 +101,13 @@ impl BuiltinRegistry {
     pub fn list(&self) -> Vec<&'static str> {
         #[cfg(feature = "http")]
         {
-            vec!["fs", "path", "events", "util", "table", "json", "http"]
+            vec![
+                "fs", "path", "events", "util", "table", "json", "process", "http",
+            ]
         }
         #[cfg(not(feature = "http"))]
         {
-            vec!["fs", "path", "events", "util", "table", "json"]
+            vec!["fs", "path", "events", "util", "table", "json", "process"]
         }
     }
 
@@ -133,6 +140,11 @@ impl BuiltinRegistry {
             "json" => json::create_json_module(lua)
                 .map(mlua::Value::Table)
                 .map_err(|e| HypeError::Execution(format!("Failed to create json module: {}", e))),
+            "process" => process::create_process_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create process module: {}", e))
+                }),
             "http" => http::lua_bindings::create_http_module(lua)
                 .map(mlua::Value::Table)
                 .map_err(|e| HypeError::Execution(format!("Failed to create HTTP module: {}", e))),
@@ -158,6 +170,11 @@ impl BuiltinRegistry {
             "json" => json::create_json_module(lua)
                 .map(mlua::Value::Table)
                 .map_err(|e| HypeError::Execution(format!("Failed to create json module: {}", e))),
+            "process" => process::create_process_module(lua)
+                .map(mlua::Value::Table)
+                .map_err(|e| {
+                    HypeError::Execution(format!("Failed to create process module: {}", e))
+                }),
             _ => {
                 let json_exports = self.load(name)?;
                 crate::lua::require::json_to_lua(lua, &json_exports).map_err(|e| {

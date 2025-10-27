@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Process module for process and environment management
+  - `process.cwd()` - Get current working directory
+  - `process.chdir(path)` - Change working directory
+  - `process.env` - Environment variables (readable/writable table with metatable)
+  - `process.getenv(key)` - Get environment variable
+  - `process.setenv(key, value)` - Set environment variable
+  - `process.pid` - Process ID (number)
+  - `process.platform` - Operating system ("linux", "macos", "windows")
+  - `process.arch` - CPU architecture ("x86_64", "aarch64", etc.)
+  - `process.argv` - Command-line arguments (table)
+  - `process.exit(code?)` - Exit with code (0-255)
+  - Cross-platform support for Windows, macOS, Linux
+
 - JSON module for encoding and decoding JSON data
   - `json.encode(value, pretty?)` - Encode Lua value to JSON string
   - `json.decode(jsonString)` - Decode JSON string to Lua value
