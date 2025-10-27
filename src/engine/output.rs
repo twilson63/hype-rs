@@ -85,7 +85,7 @@ impl OutputCapture {
         } else if stderr.is_empty() {
             stdout
         } else {
-            format!("{}\n{}", stdout, stderr)
+            format!("{}{}", stdout, stderr)
         }
     }
 
