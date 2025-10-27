@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - TBD
+## [0.3.0] - 2025-10-27
 
 ### Added
 - Filesystem module with 8 core synchronous operations (PRP-013)
