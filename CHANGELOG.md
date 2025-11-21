@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-11-21
+
+### Added
+- **Direct File/Directory Fallback for Module Resolution**
+  - `require()` now supports loading Lua files and directories directly from the root directory
+  - Enables simpler project structures without requiring `hype_modules/` directory
+  - Fallback mechanism searches for: `{module_id}.lua`, `{module_id}/index.lua`, `{module_id}/init.lua`, and directories
+  - `hype_modules/` maintains priority - direct files are only used as a fallback
+  - Fully backward compatible with existing code
+
+### Module Resolution Order (Updated)
+1. Built-in modules (fs, path, events, util, table, http)
+2. Relative paths (./ or ../)
+3. Absolute paths (if allowed)
+4. hype_modules directories
+5. ~/.hype/modules directories
+6. Direct file/directory fallback (NEW)
+7. Error if not found
+
+### Examples
+```lua
+-- Direct .lua file fallback
+local foo = require("foo")  -- Loads ./foo.lua
+
+-- Directory with index.lua fallback
+local utils = require("utils")  -- Loads ./utils/index.lua
+
+-- Directory with init.lua fallback
+local helpers = require("helpers")  -- Loads ./helpers/init.lua
+```
+
 ## [0.4.1] - 2025-10-27
 
 ### Fixed
