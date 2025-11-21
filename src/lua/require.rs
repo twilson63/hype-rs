@@ -34,28 +34,51 @@ pub fn setup_require_fn(lua: &Lua, loader: Arc<Mutex<ModuleLoader>>) -> Result<(
             })?;
 
             let is_builtin = loader_lock.is_builtin(&module_id);
+            
+            // Get cache table for later use
+            let require_table: Table = lua_ctx.globals().get("require")?;
+            let cache_table: Table = require_table.get("cache")?;
 
             if is_builtin {
-                return loader_lock
+                let result = loader_lock
                     .load_builtin_with_lua(lua_ctx, &module_id)
                     .map_err(|err| {
                         mlua::Error::RuntimeError(format!(
                             "Failed to load builtin module '{}': {}",
                             module_id, err
                         ))
-                    });
+                    })?;
+                
+                // Add module metadata to builtin modules
+                if let mlua::Value::Table(table) = &result {
+                    table.set("__id", module_id.to_string()).map_err(|e| {
+                        mlua::Error::RuntimeError(format!("Failed to set __id on module: {}", e))
+                    })?;
+                }
+                
+                // Add to require.cache
+                cache_table.set(module_id.clone(), result.clone())?;
+                
+                return Ok(result);
             }
 
-            let exports = loader_lock.require(&module_id).map_err(|err| {
-                mlua::Error::RuntimeError(format!("Failed to load module '{}': {}", module_id, err))
-            })?;
+            // Load user-defined module directly with Lua execution
+            let lua_exports = loader_lock
+                .load_user_module_with_lua(lua_ctx, &module_id)
+                .map_err(|err| {
+                    mlua::Error::RuntimeError(format!("Failed to load module '{}': {}", module_id, err))
+                })?;
 
-            let lua_exports = json_to_lua(lua_ctx, &exports).map_err(|err| {
-                mlua::Error::RuntimeError(format!(
-                    "Failed to convert module exports to Lua: {}",
-                    err
-                ))
+            // Add to require.cache
+            let require_table: Table = lua_ctx.globals().get("require")?;
+            let cache_table: Table = require_table.get("cache")?;
+            
+            // Get the path for the cache key
+            let path = loader_lock.resolver().resolve(&module_id).map_err(|err| {
+                mlua::Error::RuntimeError(format!("Failed to resolve module '{}': {}", module_id, err))
             })?;
+            let cache_key = path.to_string_lossy().to_string();
+            cache_table.set(cache_key, lua_exports.clone())?;
 
             update_require_cache(lua_ctx, &loader_lock)?;
 

@@ -803,7 +803,7 @@ mod tests {
         let result = resolver.resolve(&abs_path);
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
-        assert!(err.contains("Absolute path not allowed"));
+        assert!(err.contains("Absolute paths not allowed"));
     }
 
     #[test]

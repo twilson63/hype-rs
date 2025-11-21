@@ -14,6 +14,11 @@ pub enum ModuleError {
     InvalidManifest { reason: String },
     /// Module not found in registry
     ModuleNotFound(String),
+    /// Module not found with attempted paths
+    ModuleNotFoundWithPaths {
+        module_id: String,
+        attempted_paths: Vec<PathBuf>,
+    },
     /// Invalid module name format
     InvalidModuleName(String),
     /// Invalid module version format
@@ -24,6 +29,10 @@ pub enum ModuleError {
     ModuleAlreadyExists(String),
     /// Lock operation failed on registry
     LockPoisoned,
+    /// Path traversal security error
+    PathTraversal { path: PathBuf, reason: String },
+    /// Absolute paths not allowed
+    AbsolutePathNotAllowed(PathBuf),
 }
 
 impl fmt::Display for ModuleError {
@@ -44,6 +53,20 @@ impl fmt::Display for ModuleError {
             ModuleError::ModuleNotFound(name) => {
                 write!(f, "Module not found: '{}'", name)
             }
+            ModuleError::ModuleNotFoundWithPaths {
+                module_id,
+                attempted_paths,
+            } => {
+                write!(
+                    f,
+                    "Module not found: '{}'\n\nSearched in:",
+                    module_id
+                )?;
+                for path in attempted_paths {
+                    write!(f, "\n  • {} (not found)", path.display())?;
+                }
+                Ok(())
+            }
             ModuleError::InvalidModuleName(name) => {
                 write!(f, "Invalid module name: '{}'", name)
             }
@@ -58,6 +81,16 @@ impl fmt::Display for ModuleError {
             }
             ModuleError::LockPoisoned => {
                 write!(f, "Lock poisoned: concurrent access error")
+            }
+            ModuleError::PathTraversal { path, reason } => {
+                write!(f, "Path traversal security error: {}: {}", path.display(), reason)
+            }
+            ModuleError::AbsolutePathNotAllowed(path) => {
+                write!(
+                    f,
+                    "Absolute paths not allowed: {}",
+                    path.display()
+                )
             }
         }
     }

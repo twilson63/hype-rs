@@ -236,6 +236,90 @@ impl ModuleLoader {
         self.builtins.load_with_lua(lua, module_id)
     }
 
+    /// Load a user-defined module by executing its Lua code
+    ///
+    /// This method loads and executes a user-defined Lua module file,
+    /// capturing its exports directly as Lua values.
+    ///
+    /// # Arguments
+    /// * `lua` - The Lua runtime context
+    /// * `module_id` - The module identifier to load
+    ///
+    /// # Returns
+    /// The module's exports as a Lua value (typically a table) with __id and __path properties added
+    pub fn load_user_module_with_lua<'lua>(
+        &mut self,
+        lua: &'lua mlua::Lua,
+        module_id: &str,
+    ) -> Result<mlua::Value<'lua>, HypeError> {
+        let path = self.resolver.resolve(module_id)?;
+        let cache_key = path.to_string_lossy().to_string();
+
+        // Check if already cached (this marks it as loaded, so we skip loading)
+        if self.registry.get(&cache_key).map(|opt| opt.is_some()).unwrap_or(false) {
+            // Module has been loaded before, but we can't return cached Lua values
+            // Re-execute it to preserve function references
+            // TODO: Better caching strategy for Lua values
+        }
+
+        // Check for circular dependencies
+        let mut stack = self
+            .load_stack
+            .write()
+            .map_err(|_| HypeError::Execution("Failed to acquire load stack lock".to_string()))?;
+
+        if stack.contains(&cache_key) {
+            return Err(HypeError::Execution(format!(
+                "Circular dependency detected: {}",
+                cache_key
+            )));
+        }
+
+        stack.push(cache_key.clone());
+        drop(stack);
+
+        // Read the Lua file
+        let content = std::fs::read_to_string(&path).map_err(|e| {
+            HypeError::Execution(format!("Failed to read module file '{}': {}", path.display(), e))
+        })?;
+
+        // Execute the module in the Lua runtime
+        let result = lua.load(&content)
+            .set_name(module_id.to_string())
+            .eval::<mlua::Value>()
+            .map_err(|e| {
+                HypeError::Execution(format!("Failed to execute module '{}': {}", module_id, e))
+            })?;
+
+        // Add module metadata to the result if it's a table
+        if let mlua::Value::Table(table) = &result {
+            table.set("__id", module_id.to_string()).map_err(|e| {
+                HypeError::Execution(format!("Failed to set __id on module: {}", e))
+            })?;
+            table.set("__path", cache_key.clone()).map_err(|e| {
+                HypeError::Execution(format!("Failed to set __path on module: {}", e))
+            })?;
+        }
+
+        // Store metadata in registry for tracking
+        let info = ModuleInfo::new(module_id.to_string(), "1.0.0".to_string());
+        let metadata = json!({
+            "__id": module_id,
+            "__path": cache_key.clone(),
+        });
+        self.registry
+            .set(cache_key.clone(), metadata, info)?;
+
+        // Clean up load stack
+        let mut stack = self
+            .load_stack
+            .write()
+            .map_err(|_| HypeError::Execution("Failed to acquire load stack lock".to_string()))?;
+        stack.pop();
+
+        Ok(result)
+    }
+
     /// Get all cached module keys.
     pub fn cached_modules(&self) -> Result<Vec<String>, HypeError> {
         self.registry.list_modules()
